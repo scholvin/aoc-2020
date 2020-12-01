@@ -1,16 +1,16 @@
 #include <iostream>
+#include <string>
+#include <map>
 
 #include "basic.h"
 
-void runner(const std::string& id)
-{
-    if (id == "1a")
-        std::cout << day01a() << std::endl;
-    else if (id == "1b")
-        std::cout << day01b() << std::endl;
-    else
-        std::cerr << "unknown id " << id << std::endl;
-}
+typedef int (*SimpleFunc)(void);
+typedef std::map<std::string, SimpleFunc> SimpleMap;
+
+const SimpleMap simple = {
+    { "1a", day01a },
+    { "1b", day01b }
+};
 
 int main(int argc, char** argv)
 {
@@ -21,7 +21,17 @@ int main(int argc, char** argv)
     }
     for (int i = 1; i < argc; ++i)
     {
-        runner(argv[i]);
+        const std::string id(argv[i]);
+        auto sit = simple.find(id);
+        if (sit != simple.end())
+        {
+            int answer = (sit->second)();
+            std::cout << id << " answer: " << answer << std::endl;
+        }
+        else
+        {
+            std::cout << id << " no function found" << std::endl;
+        }
     }
     return 0;
 }
