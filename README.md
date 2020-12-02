@@ -13,6 +13,7 @@ I'm testing this with gcc 8.3.1 and cmake 3.11.4.
 mkdir build
 cd build
 cmake ../src
+make
 ```
 
 This generates the `aoc-2020` executable in the build directory. Command line help is available there.
