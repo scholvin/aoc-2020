@@ -9,7 +9,10 @@ typedef std::map<std::string, SimpleFunc> SimpleMap;
 
 const SimpleMap simple = {
     { "1a", day01a },
-    { "1b", day01b }
+    { "1b", day01b },
+    { "2a", day02a },
+    { "2b", day02b }
+
 };
 
 int main(int argc, char** argv)
