@@ -62,7 +62,7 @@ int basic::day01b()
     return -1;
 }      
 
-int basic::day02a()
+int basic::day02worker(day02func func)
 {
     int valid = 0;
     std::regex r("([0-9]+)-([0-9]+) ([a-z]): ([a-z]+)");
@@ -72,34 +72,24 @@ int basic::day02a()
         std::regex_search(s, m, r);
         int lo = std::stoi(m.str(1));
         int hi = std::stoi(m.str(2));
-        char c = m.str(3)[0];
+        char ch = m.str(3)[0];
         const std::string& pw = m.str(4);
 
-        int num = std::count(pw.begin(), pw.end(), c);
-        if (num >= lo && num <= hi)
-            valid++; 
+        if (func(lo, hi, ch, pw))
+            valid++;
     }
-    return valid;
+    return valid; 
+}
+
+
+int basic::day02a()
+{
+    return day02worker([](int l, int h, char ch, const std::string& pw) -> bool { int num = std::count(pw.begin(), pw.end(), ch); return (num >= l && num <= h); });
 }
 
 int basic::day02b()
 {
-    int valid = 0;
-    std::regex r("([0-9]+)-([0-9]+) ([a-z]): ([a-z]+)");
-    for (auto s: day02input)
-    {
-        std::smatch m;
-        std::regex_search(s, m, r);
-        int lo = std::stoi(m.str(1));
-        int hi = std::stoi(m.str(2));
-        char c = m.str(3)[0];
-        const std::string& pw = m.str(4);
-
-        if ((pw[lo-1] == c && pw[hi-1] != c) || (pw[lo-1] != c && pw[hi-1] == c))
-            valid++;
-
-    }
-    return valid;
+    return day02worker([](int l, int h, char ch, const std::string& pw) -> bool { return ((pw[l-1] == ch && pw[h-1] != ch) || (pw[l-1] != ch && pw[h-1] == ch)); });
 }
 
 // ------------------------------------------------------------------------------------
