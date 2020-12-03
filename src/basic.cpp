@@ -5,7 +5,7 @@
 #include <algorithm>
 
 // would prefer to have these added automatically somehow
-const std::map<std::string, std::function<int(void)>> basic::method_map = 
+const std::map<std::string, std::function<int(void)>> basic::method_map =
 {
     { "1a", &basic::day01a },
     { "1b", &basic::day01b },
@@ -15,7 +15,6 @@ const std::map<std::string, std::function<int(void)>> basic::method_map =
 
 void basic::run(const std::string& id)
 {
-    int answer = -1;
     auto it = method_map.find(id);
     if (it != method_map.end())
     {

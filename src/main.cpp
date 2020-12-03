@@ -23,5 +23,6 @@ int main(int argc, char** argv)
             basic::run(argv[i]);
         }
     }
+    return 0;
 }
 
