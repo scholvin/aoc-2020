@@ -4,22 +4,50 @@
 #include <regex>
 #include <algorithm>
 
-const int day01target = 2020;
-
-basic::result basic::run(const std::string& id)
+// would prefer to have these added automatically somehow
+const std::map<std::string, std::function<int(void)>> basic::method_map = 
 {
-    bool found = true;
-    int answer = -1;
+    { "1a", &basic::day01a },
+    { "1b", &basic::day01b },
+    { "2a", &basic::day02a },
+    { "2b", &basic::day02b }
+};
 
-    // this is gross, it'd be nice if we had introspection here
-    if (id == "1a") answer = day01a();
-    else if (id == "1b") answer = day01b();
-    else if (id == "2a") answer = day02a();
-    else if (id == "2b") answer = day02b();
-    else found = false;
-    
-    return std::make_pair(found, answer);
+void basic::run(const std::string& id)
+{
+    int answer = -1;
+    auto it = method_map.find(id);
+    if (it != method_map.end())
+    {
+        int answer = (it->second)();
+        std::cout << id << " answer: " << answer << std::endl;
+    }
+    else
+    {
+        std::cout << "id " << id << " is not recognized" << std::endl;
+    }
 }
+
+void basic::run_all()
+{
+    for (auto it: method_map)
+    {
+        int answer = (it.second)();
+        std::cout << it.first << " answer: " << answer << std::endl;
+    }
+}
+
+std::string basic::get_keys()
+{
+    std::string ret = "";
+    for (auto it: method_map)
+    {
+        ret += it.first + " ";
+    }
+    return ret;
+}
+
+const int day01target = 2020;
 
 int basic::day01a()
 {
@@ -49,7 +77,7 @@ int basic::day01b()
         {
             for (auto k = j + 1; k != day01input.end(); k++)
             {
-               if (*i + *j  + *k == day01target)
+               if (*i + *j + *k == day01target)
                {
                     std::cout << *i << " " << *j << " " << *k << std::endl;
                     return *i * *j * *k;
@@ -81,7 +109,6 @@ int basic::day02worker(day02func func)
     return valid; 
 }
 
-
 int basic::day02a()
 {
     return day02worker([](int l, int h, char ch, const std::string& pw) -> bool { int num = std::count(pw.begin(), pw.end(), ch); return (num >= l && num <= h); });
@@ -94,6 +121,7 @@ int basic::day02b()
 
 // ------------------------------------------------------------------------------------
 // nothing but static data below this point, so we don't have to manage data files etc.
+// ------------------------------------------------------------------------------------
 const std::vector<int> basic::day01input = { 
     1765, 1742, 1756, 1688, 1973, 1684, 1711, 1728, 1603, 1674, 1850, 1836, 1719, 1937, 1970, 1770, 
     1954, 1848, 1885, 1851, 1474, 1801, 1769, 1904, 1906, 1739, 1717, 1830, 1985, 1930, 1791, 1977, 

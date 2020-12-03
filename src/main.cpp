@@ -1,6 +1,4 @@
 #include <iostream>
-#include <string>
-
 #include "basic.h"
 
 int main(int argc, char** argv)
@@ -9,17 +7,21 @@ int main(int argc, char** argv)
     if (argc == 1)
     {
         cerr << "usage: aoc-2020 id [id id id...]" << endl
-             << "       where 'id' is something like 3a for the day 3a challenge" << endl;
+             << "       where 'id' is one of the following:" << endl
+             << "           " << basic::get_keys() << endl
+             << "   or: aoc-2020 all" << endl;
         return 1;
     }
-    for (int i = 1; i < argc; ++i)
+    if (std::string(argv[1]) == "all")
     {
-        const string id(argv[i]);
-        basic::result result = basic::run(id);
-        if (result.first)
-            cout << id << " answer: " << result.second << endl;
-        else
-            cout << id << " no challenge found" << endl;
+        basic::run_all();
     }
-    return 0;
+    else
+    {
+        for (int i = 1; i < argc; ++i)
+        {
+            basic::run(argv[i]);
+        }
+    }
 }
+
