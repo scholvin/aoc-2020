@@ -4,4 +4,4 @@ project(aoc-2020)
 
 add_compile_options(-std=c++2a -ggdb)
 
-add_executable(aoc-2020 main.cpp basic.cpp)
+add_executable(aoc-2020 main.cpp basic.cpp data.cpp)
