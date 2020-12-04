@@ -25,6 +25,25 @@ public:
 
 private:
 
+	// use a lambda for the two different validation functions on day 2
+	typedef std::function<bool(int, int, char, const std::string&)> day02func;
+	static long day02worker(day02func);
+
+	// for day 4
+	class passport
+	{
+	public:
+		void add_kvp(const std::string& kvp);    // add a key-value pair
+		bool has_fields() const;                 // does this passport have the required fields?
+		bool is_valid() const;                   // does this passport have valid fields?
+		std::string str() const;                 // print this password for debugging
+	private:
+		std::string byr, iyr, eyr, hgt, hcl, ecl, pid, cid;
+	};
+
+	// use a pointer to method function
+	typedef bool (passport::*day04func)() const;
+
 	static long day01a();
 	static long day01b();
 	static long day02a();
@@ -32,9 +51,7 @@ private:
 	static long day03a(int right, int down);
 	static long day03b();
 
-	// use a lambda for the two different validation functions on day 2
-	typedef std::function<bool(int, int, char, const std::string&)> day02func;
-	static long day02worker(day02func);
+	static long day04worker(day04func);
 
 	// data structure for the run tracker
 	static const std::map<std::string, std::function<long(void)>> method_map;

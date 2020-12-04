@@ -3,6 +3,7 @@
 #include <iostream>
 #include <regex>
 #include <algorithm>
+#include <fstream>
 
 // would prefer to have these added automatically somehow
 const std::map<std::string, std::function<long(void)>> basic::method_map =
@@ -12,7 +13,9 @@ const std::map<std::string, std::function<long(void)>> basic::method_map =
     { "2a", &basic::day02a },
     { "2b", &basic::day02b },
     { "3a", std::bind(&basic::day03a, 3, 1) },
-    { "3b", &basic::day03b }
+    { "3b", &basic::day03b },
+    { "4a", std::bind(&basic::day04worker, &basic::passport::has_fields) },
+    { "4b", std::bind(&basic::day04worker, &basic::passport::is_valid) }
 };
 
 void basic::run(const std::string& id)
@@ -122,7 +125,7 @@ long basic::day02b()
 
 long basic::day03a(int right, int down)
 {
-    int x = 0, y = 0;
+    size_t x = 0, y = 0;
     long trees = 0;
     while (y < day03input.size())
     {
@@ -150,4 +153,87 @@ long basic::day03b()
     return product;
 }
 
+void basic::passport::add_kvp(const std::string& kvp)
+{
+    std::size_t colon = kvp.find(":");
+    std::string key(kvp.substr(0, colon));
+    std::string value(kvp.substr(colon+1));
+    if (key == "byr") byr = value;
+    else if (key == "iyr") iyr = value;
+    else if (key == "eyr") eyr = value;
+    else if (key == "hgt") hgt = value;
+    else if (key == "hcl") hcl = value;
+    else if (key == "ecl") ecl = value;
+    else if (key == "pid") pid = value;
+    else if (key == "cid") cid = value;
+    else throw std::runtime_error("bad tag");
+}
+
+bool basic::passport::has_fields() const
+{
+    // cid is optional
+    return byr.size() && iyr.size() && eyr.size() && hgt.size() && hcl.size() && ecl.size() && pid.size();
+}
+
+bool basic::passport::is_valid() const
+{
+    static const std::regex height_re("([0-9]+)(cm|in)");
+    static const std::regex hair_re("#[0-9a-f]{6}");
+    static const std::regex eyes_re("amb|blu|brn|gry|grn|hzl|oth");
+    static const std::regex pass_re("[0-9]{9}");
+    std::smatch parts;
+    if (!std::regex_search(hgt, parts, height_re))
+        // height doesn't match regex
+        return false;
+    int nht = std::stoi(parts.str(1));
+
+    return byr.size() && std::stoi(byr) >= 1920 && std::stoi(byr) <= 2002 &&
+           iyr.size() && std::stoi(iyr) >= 2010 && std::stoi(iyr) <= 2020 &&
+           eyr.size() && std::stoi(eyr) >= 2020 && std::stoi(eyr) <= 2030 &&
+           ((parts.str(2) == "in" && nht >= 59 && nht <= 76) || (parts.str(2) == "cm" && nht >= 150 && nht <= 193)) &&
+           std::regex_match(hcl, hair_re) &&
+           std::regex_match(ecl, eyes_re) &&
+           std::regex_match(pid, pass_re);
+}
+
+std::string basic::passport::str() const
+{
+    return "/" + byr + "/" + iyr + "/"+ eyr + "/" + hgt + "/" + hcl + "/" + ecl + "/" + pid + "/" + cid + " " + (is_valid() ? "Y" : "N");
+}
+
+long basic::day04worker(day04func func)
+{
+    long valid = 0;
+    long total = 0;
+    std::ifstream infile("../data/day04.dat"); // doesn't make sense to try to stuff this data into a structure
+    std::string line;
+
+    // this scopes awkwardly
+    passport* p = new passport();
+    while (std::getline(infile, line))
+    {
+        if (line.size() > 0)
+        {
+            std::istringstream iss(line);
+            std::string word;
+            while (iss >> word)
+                p->add_kvp(word);
+        }
+        else
+        {
+            //std::cout << p.str() << std::endl;
+            if ((p->*func)())
+                valid++;
+            delete p;
+            p = new passport(); // get a new, empty one
+            total++;
+        }
+    }
+    // catch the last one
+    if ((p->*func)())
+        valid++;
+    total++;
+    delete p;
+    return valid;
+}
 // moved the data out to data.cpp to give myself a break on compile times
