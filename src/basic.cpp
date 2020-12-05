@@ -4,6 +4,7 @@
 #include <regex>
 #include <algorithm>
 #include <fstream>
+#include <set>
 
 // would prefer to have these added automatically somehow
 const std::map<std::string, std::function<long(void)>> basic::method_map =
@@ -15,7 +16,9 @@ const std::map<std::string, std::function<long(void)>> basic::method_map =
     { "3a", std::bind(&basic::day03a, 3, 1) },
     { "3b", &basic::day03b },
     { "4a", std::bind(&basic::day04worker, &basic::passport::has_fields) },
-    { "4b", std::bind(&basic::day04worker, &basic::passport::is_valid) }
+    { "4b", std::bind(&basic::day04worker, &basic::passport::is_valid) },
+    { "5a", &basic::day05a },
+    { "5b", &basic::day05b }
 };
 
 void basic::run(const std::string& id)
@@ -236,4 +239,67 @@ long basic::day04worker(day04func func)
     delete p;
     return valid;
 }
+
+long basic::calc_seat(const std::string& bp)
+{
+    long range = 128;
+    long row = 0;
+    for (size_t r = 0; r < 7; r++)
+    {
+        range = range / 2;
+        if (bp[r] == 'B')
+            row += range;
+    }
+    range = 8;
+    long seat = 0;
+    for (size_t s = 7; s < 10; s++)
+    {
+        range = range / 2;
+        if (bp[s] == 'R')
+            seat += range;
+    }
+    return row * 8 + seat;
+}
+
+long basic::day05a()
+{
+    long max = 0;
+    std::ifstream infile("../data/day05.dat");
+    std::string line;
+
+    while (std::getline(infile, line))
+    {
+        long id = calc_seat(line);
+        if (id > max)
+            max = id;
+    }
+    return max;
+}
+
+long basic::day05b()
+{
+    std::ifstream infile("../data/day05.dat");
+    std::string line;
+    std::set<long> seats;
+
+    while (std::getline(infile, line))
+    {
+        seats.insert(calc_seat(line));
+    }
+    auto s = seats.begin();
+    long prev = *s;
+    while (++s != seats.end())
+    {
+        if (*s - prev != 1)
+            return *s - 1;
+        prev = *s;
+    }
+
+    // shouldn't happen
+    return 0;
+}
+
+
+
+
 // moved the data out to data.cpp to give myself a break on compile times
