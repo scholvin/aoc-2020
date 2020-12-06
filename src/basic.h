@@ -27,7 +27,6 @@ private:
 
 	// use a lambda for the two different validation functions on day 2
 	typedef std::function<bool(int, int, char, const std::string&)> day02func;
-	static long day02worker(day02func);
 
 	// for day 4
 	class passport
@@ -40,14 +39,18 @@ private:
 	private:
 		std::string byr, iyr, eyr, hgt, hcl, ecl, pid, cid;
 	};
-
 	// use a pointer to method function
 	typedef bool (passport::*day04func)() const;
+
+	// for day 6, similar to day 2
+	typedef std::vector<std::array<long, 26>> customs_group;
+	typedef std::function<long(const customs_group&)> day06func;
 
 	static long day01a();
 	static long day01b();
 	static long day02a();
 	static long day02b();
+	static long day02worker(day02func);
 	static long day03a(int right, int down);
 	static long day03b();
 	static long day04worker(day04func);
@@ -56,6 +59,7 @@ private:
 	static long day05b();
 	static long day06a();
 	static long day06b();
+	static long day06worker(day06func);
 
 	// data structure for the run tracker
 	static const std::map<std::string, std::function<long(void)>> method_map;

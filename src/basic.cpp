@@ -327,64 +327,61 @@ long basic::day05b()
 
 long basic::day06a()
 {
-    long sum = 0;
-    std::ifstream infile("../data/day06.dat");
-    std::string line;
-    long group[26] = { 0 };
-
-    // This thing where they use a blank line to delimit a group, but not after the last one
-    // in the file, leaves a bit of an anti-pattern where the validation step has to be performed
-    // in two different places. (Or maybe there's some other trick I don't know.) Use a lambda
-    // with a reference capture where that code is needed. Also did this in part b below.
-    auto counter = [&]() -> long {
+    auto counter = [](const customs_group& group) -> long {
         long count = 0;
         for (auto i = 0; i < 26; ++i)
-            if (group[i])
+        {
+            for (size_t p = 0; p < group.size(); p++)
+            {
+                if (group[p][i])
+                {
                     count++;
+                    break;
+                }
+            }
+        }
         return count;
     };
 
-    while (std::getline(infile, line))
-    {
-        if (line.size() > 0)
-        {
-            for (auto c: line)
-                group[c-'a']++;
-        }
-        else
-        {
-            sum += counter();
-            memset(group, 0, sizeof(group));
-        }
-    }
-    // get the last group, too
-    sum += counter();
-    return sum;
+    return day06worker(counter);
 }
 
 long basic::day06b()
 {
-    long sum = 0;
-    std::ifstream infile("../data/day06.dat");
-    std::string line;
-    std::vector<std::array<long, 26>> group;
-
-    auto counter = [&]() -> long {
+    auto counter = [](const customs_group& group) -> long {
         long questions = 0;
         for (auto i = 0; i < 26; i++)
         {
             bool q = true;
             for (size_t p = 0; p < group.size(); p++)
+            {
                 q = q && group[p][i];
+            }
             if (q)
+            {
                 questions++;
+            }
         }
         return questions;
     };
 
+    return day06worker(counter);
+}
+
+long basic::day06worker(day06func counter)
+{
+    long sum = 0;
+    std::ifstream infile("../data/day06.dat");
+    std::string line;
+    customs_group group;
+
+    // This thing where they use a blank line to delimit a group, but not after the last one
+    // in the file, leaves a bit of an anti-pattern where the validation step has to be performed
+    // in two different places. (Or maybe there's some other trick I don't know.) Use a lambda
+    // where that code is needed, pass it into here, invoke it twice.
     while (std::getline(infile, line))
     {
-        std::array<long, 26> form = { 0 };
+        customs_group::value_type form = { 0 };
         if (line.size() > 0)
         {
             for (auto c: line)
@@ -393,11 +390,11 @@ long basic::day06b()
         }
         else
         {
-            sum += counter();
+            sum += counter(group);
             group.clear();
         }
     }
     // get the last group, too
-    sum += counter();
+    sum += counter(group);
     return sum;
 }
