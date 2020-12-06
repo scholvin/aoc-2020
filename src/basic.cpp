@@ -18,7 +18,9 @@ const std::map<std::string, std::function<long(void)>> basic::method_map =
     { "4a", std::bind(&basic::day04worker, &basic::passport::has_fields) },
     { "4b", std::bind(&basic::day04worker, &basic::passport::is_valid) },
     { "5a", &basic::day05a },
-    { "5b", &basic::day05b }
+    { "5b", &basic::day05b },
+    { "6a", &basic::day06a },
+    { "6b", &basic::day06b },
 };
 
 void basic::run(const std::string& id)
@@ -323,7 +325,79 @@ long basic::day05b()
     return 0;
 }
 
+long basic::day06a()
+{
+    long sum = 0;
+    std::ifstream infile("../data/day06.dat");
+    std::string line;
+    long group[26] = { 0 };
 
+    // This thing where they use a blank line to delimit a group, but not after the last one
+    // in the file, leaves a bit of an anti-pattern where the validation step has to be performed
+    // in two different places. (Or maybe there's some other trick I don't know.) Use a lambda
+    // with a reference capture where that code is needed. Also did this in part b below.
+    auto counter = [&]() -> long {
+        long count = 0;
+        for (auto i = 0; i < 26; ++i)
+            if (group[i])
+                    count++;
+        return count;
+    };
 
+    while (std::getline(infile, line))
+    {
+        if (line.size() > 0)
+        {
+            for (auto c: line)
+                group[c-'a']++;
+        }
+        else
+        {
+            sum += counter();
+            memset(group, 0, sizeof(group));
+        }
+    }
+    // get the last group, too
+    sum += counter();
+    return sum;
+}
 
-// moved the data out to data.cpp to give myself a break on compile times
+long basic::day06b()
+{
+    long sum = 0;
+    std::ifstream infile("../data/day06.dat");
+    std::string line;
+    std::vector<std::array<long, 26>> group;
+
+    auto counter = [&]() -> long {
+        long questions = 0;
+        for (auto i = 0; i < 26; i++)
+        {
+            bool q = true;
+            for (size_t p = 0; p < group.size(); p++)
+                q = q && group[p][i];
+            if (q)
+                questions++;
+        }
+        return questions;
+    };
+
+    while (std::getline(infile, line))
+    {
+        std::array<long, 26> form = { 0 };
+        if (line.size() > 0)
+        {
+            for (auto c: line)
+                form[c-'a']++;
+            group.push_back(form);
+        }
+        else
+        {
+            sum += counter();
+            group.clear();
+        }
+    }
+    // get the last group, too
+    sum += counter();
+    return sum;
+}

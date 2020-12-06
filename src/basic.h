@@ -54,6 +54,8 @@ private:
 	static long calc_seat(const std::string& bp);
 	static long day05a();
 	static long day05b();
+	static long day06a();
+	static long day06b();
 
 	// data structure for the run tracker
 	static const std::map<std::string, std::function<long(void)>> method_map;
