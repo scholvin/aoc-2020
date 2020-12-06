@@ -58,10 +58,16 @@ const int day01target = 2020;
 
 long basic::day01a()
 {
+    std::vector<long> input;
+    std::ifstream infile("../data/day01.dat");
+    std::string line;
+    while (std::getline(infile, line))
+        input.push_back(std::stol(line));
+
     // return the product of the two entries that sum to 2020. O(N^2), don't care.
-    for (auto i = day01input.begin(); i != day01input.end(); i++)
+    for (auto i = input.begin(); i != input.end(); i++)
     {
-        for (auto j = i + 1; j != day01input.end(); j++)
+        for (auto j = i + 1; j != input.end(); j++)
         {
             if (*i + *j == day01target)
             {
@@ -77,12 +83,18 @@ long basic::day01a()
 
 long basic::day01b()
 {
+    std::vector<long> input;
+    std::ifstream infile("../data/day01.dat");
+    std::string line;
+    while (std::getline(infile, line))
+        input.push_back(std::stol(line));
+
     // return the product of the three entries that sum to 2020. O(N^3), don't care.
-    for (auto i = day01input.begin(); i != day01input.end(); i++)
+    for (auto i = input.begin(); i != input.end(); i++)
     {
-        for (auto j = i + 1; j != day01input.end(); j++)
+        for (auto j = i + 1; j != input.end(); j++)
         {
-            for (auto k = j + 1; k != day01input.end(); k++)
+            for (auto k = j + 1; k != input.end(); k++)
             {
                if (*i + *j + *k == day01target)
                {
@@ -99,9 +111,15 @@ long basic::day01b()
 
 long basic::day02worker(day02func func)
 {
+    std::vector<std::string> input;
+    std::ifstream infile("../data/day02.dat");
+    std::string line;
+    while (std::getline(infile, line))
+        input.push_back(line);
+
     long valid = 0;
     std::regex r("([0-9]+)-([0-9]+) ([a-z]): ([a-z]+)");
-    for (auto s: day02input)
+    for (auto s: input)
     {
         std::smatch m;
         std::regex_search(s, m, r);
@@ -128,15 +146,21 @@ long basic::day02b()
 
 long basic::day03a(int right, int down)
 {
+    std::vector<std::string> input;
+    std::ifstream infile("../data/day03.dat");
+    std::string line;
+    while (std::getline(infile, line))
+        input.push_back(line);
+
     size_t x = 0, y = 0;
     long trees = 0;
-    while (y < day03input.size())
+    while (y < input.size())
     {
         // x/y in reverse order but correct
-        if (day03input[y][x] == '#')
+        if (input[y][x] == '#')
             trees++;
         y += down;
-        x = (x + right) % day03input[0].size();
+        x = (x + right) % input[0].size();
     }
     return trees;
 }

@@ -57,9 +57,4 @@ private:
 
 	// data structure for the run tracker
 	static const std::map<std::string, std::function<long(void)>> method_map;
-
-    // input data
-	static const std::vector<int> day01input;
-	static const std::vector<std::string> day02input;
-	static const std::vector<std::string> day03input;
 };
