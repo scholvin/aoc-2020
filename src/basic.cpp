@@ -4,7 +4,9 @@
 #include <regex>
 #include <algorithm>
 #include <fstream>
-#include <set>
+
+#include <boost/algorithm/string.hpp>
+#include <boost/graph/directed_graph.hpp>
 
 // would prefer to have these added automatically somehow
 const std::map<std::string, std::function<long(void)>> basic::method_map =
@@ -21,6 +23,8 @@ const std::map<std::string, std::function<long(void)>> basic::method_map =
     { "5b", &basic::day05b },
     { "6a", &basic::day06a },
     { "6b", &basic::day06b },
+    { "7a", &basic::day07a },
+    { "7b", &basic::day07b },
 };
 
 void basic::run(const std::string& id)
@@ -397,4 +401,117 @@ long basic::day06worker(day06func counter)
     // get the last group, too
     sum += counter(group);
     return sum;
+}
+
+long basic::day07a()
+{
+    bagmap_t bagmap;
+    day07load_bagmap(bagmap);
+
+    // for each bag in the map, is there a paty to "shiny gold"?
+    // surely a better way to do this than a BFS from each possible node but it finishes in under 2s
+    long paths = 0;
+    for (auto o: bagmap)
+    {
+        if (o.first == "shiny gold")
+            continue;
+        if (day07path_exists(bagmap, o.first, "shiny gold"))
+            paths++;
+    }
+
+    return paths;
+}
+
+long basic::day07b()
+{
+    bagmap_t bagmap;
+    day07load_bagmap(bagmap);
+
+    // do something like a DFS from the "shiny gold" bag, counting up the inners
+    return day07dfs(bagmap, "shiny gold") - 1; // don't count myself
+}
+
+void basic::day07load_bagmap(bagmap_t& bagmap)
+{
+    std::ifstream infile("../data/day07.dat");
+    std::string line;
+
+    std::regex line_re("([a-z]+ [a-z]+) bags contain(.+)");
+    std::regex contain_re(" ([0-9]+) ([a-z]+ [a-z]+) bag[s]?");
+
+    while (std::getline(infile, line))
+    {
+        bagset_t inside;
+        std::smatch sm1;
+        std::regex_search(line, sm1, line_re);
+        std::string outside = sm1.str(1); // container color
+        std::string second = sm1.str(2);
+        std::vector<std::string> inners;
+        boost::split(inners, second, boost::is_any_of(".,"));
+        for (auto inner: inners)
+        {
+            if (inner.size() == 0 || inner.substr(0, 3) == " no")
+            {
+                break;
+            }
+            std::smatch sm2;
+            std::regex_search(inner, sm2, contain_re);
+            // 1st = number, 2nd = name
+            bag_info contained = { sm2.str(2), std::stoi(sm2.str(1)) };
+            inside.insert(contained);
+        }
+        bagmap[outside] = inside;
+    }
+}
+
+bool basic::day07path_exists(const bagmap_t& bagmap, const std::string& start, const std::string& finish)
+{
+    if (start == finish)
+        return true;
+
+    std::map<std::string, bool> visited;
+    for (auto b: bagmap)
+        visited[b.first] = false;
+
+    // queue for bfs
+    std::list<std::string> queue;
+
+    visited[start] = true;
+    queue.push_back(start);
+
+    while (!queue.empty())
+    {
+        std::string s = queue.front();
+        queue.pop_front();
+        auto b = bagmap.find(s);
+        for (auto i: b->second)
+        {
+            if (i.name == finish)
+                return true;
+            if (!visited[i.name])
+            {
+                visited[i.name] = true;
+                queue.push_back(i.name);
+            }
+        }
+    }
+    return false;
+}
+
+long basic::day07dfs(const bagmap_t& bagmap, const std::string& start)
+{
+    long level = 0;
+    auto node = bagmap.find(start);
+
+    if (node->second.empty())
+    {
+        // end of the road - just me
+        return 1;
+    }
+
+    for (auto n: node->second)
+    {
+        level += n.count * day07dfs(bagmap, n.name);
+    }
+    return level + 1;
 }
