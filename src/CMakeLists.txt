@@ -8,4 +8,4 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 add_compile_options(-std=c++2a -ggdb -Wall)
 
-add_executable(aoc-2020 main.cpp basic.cpp)
+add_executable(aoc-2020 main.cpp runner.cpp week1.cpp week2.cpp)
