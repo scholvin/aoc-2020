@@ -28,6 +28,8 @@ const std::map<std::string, std::function<long(void)>> basic::method_map =
     { "7a", &basic::day07a },
     { "7b", &basic::day07b },
     { "7a_alt", &basic::day07a_alt },
+    { "8a", &basic::day08a },
+    { "8b", &basic::day08b },
 };
 
 void basic::run(const std::string& id)
@@ -610,4 +612,96 @@ long basic::day07a_alt()
 
     //return boost::num_vertices(graph);
     return matches;
+}
+
+void basic::read_program(program_t& program, const std::string& filename)
+{
+    const std::map<std::string, machine_code> translator = 
+    {
+        { "nop", nop },
+        { "acc", acc },
+        { "jmp", jmp }
+    };
+
+    std::ifstream infile(filename);
+    std::string line;
+
+    const std::regex line_re("([a-z]+) ([-+][0-9]+)");
+    while (std::getline(infile, line))
+    {
+        std::smatch sm;
+        std::regex_search(line, sm, line_re);
+        auto it = translator.find(sm.str(1));
+        if (it != translator.end())
+        {
+            program.push_back(std::make_pair(it->second, std::stol(sm.str(2))));
+        }
+        else
+            throw std::runtime_error("bad code: ");
+    }
+}
+
+void basic::run_program(const program_t& program, long& accumulator, bool& success)
+{
+    std::set<size_t> seen;
+
+    // run the program
+    success = false;
+    accumulator = 0;
+    size_t program_counter = 0;
+    while (program_counter < program.size())
+    {
+        //std::cout << "pc=" << program_counter << " ac=" << accumulator << " op=" << program[program_counter].first << " arg=" << program[program_counter].second << std::endl;
+        if (seen.find(program_counter) != seen.end())
+        {
+            return;
+        }
+        seen.insert(program_counter);
+
+        switch (program[program_counter].first)
+        {
+            case nop: program_counter++; break;
+            case acc: accumulator += program[program_counter++].second; break;
+            case jmp: program_counter += program[program_counter].second; break;
+        }
+    }
+
+    success = true;
+}
+
+long basic::day08a()
+{
+    program_t program;
+    read_program(program, "../data/day08.dat");
+
+    long accumulator;
+    bool success;
+    run_program(program, accumulator, success);
+    return accumulator;
+}
+
+long basic::day08b()
+{
+    program_t program;
+    read_program(program, "../data/day08.dat");
+
+    long accumulator;
+    bool success;
+
+    for (size_t i = 0; i < program.size(); i++)
+    {
+        if (program[i].first == nop || program[i].first == jmp)
+        {
+            program_t copy = program;
+            if (program[i].first == nop)
+                copy[i].first = jmp;
+            else
+                copy[i].first = nop;
+            run_program(copy, accumulator, success);
+            if (success)
+                return accumulator;
+        }
+    }
+    // shouldn't happen
+    return -1;
 }

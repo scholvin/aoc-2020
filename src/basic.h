@@ -74,6 +74,20 @@ private:
 	static long day07dfs(const bagmap_t& bagmap, const std::string& start);
 	static long day07a_alt();
 
+	enum machine_code {
+		nop,
+		acc,
+		jmp
+	};
+
+	typedef std::vector<std::pair<machine_code, long>> program_t;
+	static void read_program(program_t& program, const std::string& filename);
+	static void run_program(const program_t& program, long& accumulator, bool& success);
+	static long day08a();
+	static long day08b();
+
+
+
 	// data structure for the run tracker
 	static const std::map<std::string, std::function<long(void)>> method_map;
 };
