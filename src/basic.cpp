@@ -6,7 +6,9 @@
 #include <fstream>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/graph/directed_graph.hpp>
+#include <boost/graph/adjacency_list.hpp>
+
+long wtf();
 
 // would prefer to have these added automatically somehow
 const std::map<std::string, std::function<long(void)>> basic::method_map =
@@ -25,6 +27,7 @@ const std::map<std::string, std::function<long(void)>> basic::method_map =
     { "6b", &basic::day06b },
     { "7a", &basic::day07a },
     { "7b", &basic::day07b },
+    { "wtf", &wtf }
 };
 
 void basic::run(const std::string& id)
@@ -513,5 +516,98 @@ long basic::day07dfs(const bagmap_t& bagmap, const std::string& start)
     {
         level += n.count * day07dfs(bagmap, n.name);
     }
+    // return all the children plus myself
     return level + 1;
+}
+
+#include <boost/graph/breadth_first_search.hpp>
+class bfs_match_visitor : public boost::default_bfs_visitor
+{
+    std::string name;
+    bool& matched;
+public:
+    bfs_match_visitor(const std::string& n, bool& m) : name(n), matched(m) { }
+    template <typename Vertex, typename Graph>
+    void discover_vertex(Vertex u, const Graph& g) const 
+    {
+        if (g[u].name == name)
+            matched = true;
+    }
+};
+
+long wtf()
+{
+    // https://stackoverflow.com/a/49232741
+    struct vertex_prop_t { std::string name; boost::default_color_type color; };
+    struct edge_prop_t { long count; };
+    using graph_t = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, vertex_prop_t, edge_prop_t>;
+    using vertex_t = boost::graph_traits<graph_t>::vertex_descriptor;
+    //using edge_t = boost::graph_traits<graph_t>::edge_descriptor;
+
+    graph_t graph;
+    std::map<std::string, vertex_t> vmap;
+
+    std::ifstream infile("../data/day07.dat");
+    std::string line;
+    const std::regex line_re("([a-z]+ [a-z]+) bags contain(.+)");
+    const std::regex contain_re(" ([0-9]+) ([a-z]+ [a-z]+) bag[s]?");
+
+    while (std::getline(infile, line))
+    {
+        std::smatch sm1;
+        std::regex_search(line, sm1, line_re);
+        std::string source = sm1.str(1); // outside bag color
+        std::string second = sm1.str(2);
+        std::vector<std::string> inners;
+        boost::split(inners, second, boost::is_any_of(".,"));
+        for (auto inner: inners)
+        {
+            if (inner.size() == 0 || inner.substr(0, 3) == " no")
+            {
+                break;
+            }
+            std::smatch sm2;
+            std::regex_search(inner, sm2, contain_re);
+            long count = std::stol(sm2.str(1));
+            std::string dest = sm2.str(2);
+
+            vertex_t u;
+            auto uit = vmap.find(source);
+            if (uit == vmap.end())
+            {
+                u = boost::add_vertex(vertex_prop_t{ source }, graph);
+                vmap.insert(std::make_pair(source, u));
+            }
+            else
+                u = uit->second;
+
+            vertex_t v;
+            auto vit = vmap.find(dest);
+            if (vit == vmap.end())
+            {
+                v = boost::add_vertex(vertex_prop_t{ dest }, graph);
+                vmap.insert(std::make_pair(dest, v));
+            }
+            else
+                v = vit->second;
+
+            boost::add_edge(u, v, edge_prop_t{count}, graph);
+        }
+    }
+
+    // here's the bfs to calculate whether there is a path
+    long matches = 0;
+    auto vp = vertices(graph);
+    for (auto v = vp.first; v != vp.second; ++v)
+    {
+        if (graph[*v].name == "shiny gold") continue;
+        bool matched = false;
+        bfs_match_visitor vis("shiny gold", matched);
+        boost::breadth_first_search(graph, *v, boost::color_map(boost::get(&vertex_prop_t::color, graph)).visitor(vis));
+        if (matched)
+            matches++;
+    }
+
+    //return boost::num_vertices(graph);
+    return matches;
 }
