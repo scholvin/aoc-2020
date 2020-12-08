@@ -20,7 +20,7 @@ namespace week1
     long day07b();
     long day07a_alt();
 
-	static const runner::method_map_t method_map =
+	const runner::method_map_t method_map =
 	{
         { "1a", &day01a },
         { "1b", &day01b },

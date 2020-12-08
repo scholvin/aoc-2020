@@ -1,7 +1,8 @@
-#include <iostream>
 #include "runner.h"
 #include "week1.h"
 #include "week2.h"
+
+#include <iostream>
 
 int main(int argc, char** argv)
 {
