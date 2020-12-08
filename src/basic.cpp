@@ -27,7 +27,7 @@ const std::map<std::string, std::function<long(void)>> basic::method_map =
     { "6b", &basic::day06b },
     { "7a", &basic::day07a },
     { "7b", &basic::day07b },
-    { "wtf", &wtf }
+    { "7a_alt", &basic::day07a_alt },
 };
 
 void basic::run(const std::string& id)
@@ -535,7 +535,7 @@ public:
     }
 };
 
-long wtf()
+long basic::day07a_alt()
 {
     // https://stackoverflow.com/a/49232741
     struct vertex_prop_t { std::string name; boost::default_color_type color; };

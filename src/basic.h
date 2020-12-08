@@ -72,6 +72,7 @@ private:
 	static void day07load_bagmap(bagmap_t& bagmap);
 	static bool day07path_exists(const bagmap_t& bagmap, const std::string& start, const std::string& finish);
 	static long day07dfs(const bagmap_t& bagmap, const std::string& start);
+	static long day07a_alt();
 
 	// data structure for the run tracker
 	static const std::map<std::string, std::function<long(void)>> method_map;
