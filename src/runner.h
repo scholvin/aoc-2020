@@ -19,5 +19,6 @@ public:
 	void run_all() const;
 
 private:
+	void run_impl(const std::string& id, basic_func_t func) const;
 	method_map_t m_map;
 };
