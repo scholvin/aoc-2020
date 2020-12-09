@@ -14,6 +14,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/breadth_first_search.hpp>
+#include <boost/graph/depth_first_search.hpp>
 
 namespace week1
 {
@@ -40,7 +41,7 @@ namespace week1
             }
         }
 
-    // shouldn't happen
+        // shouldn't happen
         return -1;
     }
 
@@ -393,14 +394,17 @@ namespace week1
     }
 
     // day 7
+    const std::string day07filename = "../data/day07.dat";
     struct bag_info { std::string name; long count; };
     struct bag_comp { bool operator()(const bag_info& l, const bag_info& r) const { return l.name < r.name; }};
     typedef std::set<bag_info, bag_comp> bagset_t;
     typedef std::map<std::string, bagset_t> bagmap_t;
 
+    const std::string magic_bag = "shiny gold";
+
     void day07load_bagmap(bagmap_t& bagmap)
     {
-        std::ifstream infile("../data/day07.dat");
+        std::ifstream infile(day07filename);
         std::string line;
 
         std::regex line_re("([a-z]+ [a-z]+) bags contain(.+)");
@@ -465,6 +469,25 @@ namespace week1
         return false;
     }
 
+    long day07a()
+    {
+        bagmap_t bagmap;
+        day07load_bagmap(bagmap);
+
+        // for each bag in the map, is there a paty to "shiny gold"?
+        // surely a better way to do this than a BFS from each possible node but it finishes in under 2s
+        long paths = 0;
+        for (auto o: bagmap)
+        {
+            if (o.first == magic_bag)
+                continue;
+            if (day07path_exists(bagmap, o.first, magic_bag))
+                paths++;
+        }
+
+        return paths;
+    }
+
     long day07dfs(const bagmap_t& bagmap, const std::string& start)
     {
         long level = 0;
@@ -484,61 +507,27 @@ namespace week1
         return level + 1;
     }
 
-    long day07a()
-    {
-        bagmap_t bagmap;
-        day07load_bagmap(bagmap);
-
-        // for each bag in the map, is there a paty to "shiny gold"?
-        // surely a better way to do this than a BFS from each possible node but it finishes in under 2s
-        long paths = 0;
-        for (auto o: bagmap)
-        {
-            if (o.first == "shiny gold")
-                continue;
-            if (day07path_exists(bagmap, o.first, "shiny gold"))
-                paths++;
-        }
-
-        return paths;
-    }
-
     long day07b()
     {
         bagmap_t bagmap;
         day07load_bagmap(bagmap);
 
         // do something like a DFS from the "shiny gold" bag, counting up the inners
-        return day07dfs(bagmap, "shiny gold") - 1; // don't count myself
+        return day07dfs(bagmap, magic_bag) - 1; // don't count myself
     }
 
-    class bfs_match_visitor : public boost::default_bfs_visitor
-    {
-        std::string name;
-        bool& matched;
-    public:
-        bfs_match_visitor(const std::string& n, bool& m) : name(n), matched(m) { }
-        template <typename Vertex, typename Graph>
-        void discover_vertex(Vertex u, const Graph& g) const 
-        {
-            if (g[u].name == name)
-                matched = true;
-        }
-    };
+    // https://stackoverflow.com/a/49232741
+    struct vertex_prop_t { std::string name; boost::default_color_type color; };
+    struct edge_prop_t { long count; };
+    using graph_t = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, vertex_prop_t, edge_prop_t>;
+    using vertex_t = boost::graph_traits<graph_t>::vertex_descriptor;
+    using edge_t = boost::graph_traits<graph_t>::edge_descriptor;
 
-    long day07a_alt()
+    void read_graph(graph_t& graph)
     {
-        // https://stackoverflow.com/a/49232741
-        struct vertex_prop_t { std::string name; boost::default_color_type color; };
-        struct edge_prop_t { long count; };
-        using graph_t = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, vertex_prop_t, edge_prop_t>;
-        using vertex_t = boost::graph_traits<graph_t>::vertex_descriptor;
-        //using edge_t = boost::graph_traits<graph_t>::edge_descriptor;
-
-        graph_t graph;
         std::map<std::string, vertex_t> vmap;
 
-        std::ifstream infile("../data/day07.dat");
+        std::ifstream infile(day07filename);
         std::string line;
         const std::regex line_re("([a-z]+ [a-z]+) bags contain(.+)");
         const std::regex contain_re(" ([0-9]+) ([a-z]+ [a-z]+) bag[s]?");
@@ -547,7 +536,7 @@ namespace week1
         {
             std::smatch sm1;
             std::regex_search(line, sm1, line_re);
-            std::string source = sm1.str(1); // outside bag color
+            std::string source = sm1.str(1); // source vertex name
             std::string second = sm1.str(2);
             std::vector<std::string> inners;
             boost::split(inners, second, boost::is_any_of(".,"));
@@ -559,8 +548,12 @@ namespace week1
                 }
                 std::smatch sm2;
                 std::regex_search(inner, sm2, contain_re);
-                long count = std::stol(sm2.str(1));
-                std::string dest = sm2.str(2);
+                long count = std::stol(sm2.str(1));  // edge weight
+                std::string dest = sm2.str(2);       // dest vertex name
+
+                // this sucks - we have to maintain our own count (via maps) of the vertexes the graph
+                // already knows about. if you try add_edge(u, v) and add_edge(u, w) you get two versions of u
+                // or something worse.
 
                 vertex_t u;
                 auto uit = vmap.find(source);
@@ -582,24 +575,93 @@ namespace week1
                 else
                     v = vit->second;
 
-                boost::add_edge(u, v, edge_prop_t{count}, graph);
+                boost::add_edge(u, v, edge_prop_t{ count }, graph);
             }
         }
+    }
+
+    // this is used by day07_alt at each visitation during a BFS
+    class bfs_match_visitor : public boost::default_bfs_visitor
+    {
+        std::string name;
+        bool& matched;
+    public:
+        bfs_match_visitor(const std::string& n, bool& m) : name(n), matched(m) { }
+        template <typename Vertex, typename Graph>
+        void discover_vertex(Vertex u, const Graph& g) const 
+        {
+            if (g[u].name == name)
+                matched = true;
+        }
+    };
+
+    long day07a_alt()
+    {
+        graph_t graph;
+        read_graph(graph);
 
         // here's the bfs to calculate whether there is a path
         long matches = 0;
         auto vp = vertices(graph);
         for (auto v = vp.first; v != vp.second; ++v)
         {
-            if (graph[*v].name == "shiny gold") continue;
+            if (graph[*v].name == magic_bag)
+                continue;
             bool matched = false;
-            bfs_match_visitor vis("shiny gold", matched);
+            bfs_match_visitor vis(magic_bag, matched);
             boost::breadth_first_search(graph, *v, boost::color_map(boost::get(&vertex_prop_t::color, graph)).visitor(vis));
             if (matched)
                 matches++;
         }
 
-        //return boost::num_vertices(graph);
         return matches;
     }
+
+#if 0
+    // this doesn't work at all yet
+    class dfs_count_visitor : public boost::default_dfs_visitor
+    {
+        long& m_count;
+    public:
+        dfs_count_visitor(long& count) : m_count(count) { }
+        template <typename Vertex, typename Graph>
+        void discover_vertex(Vertex u, const Graph& g) const 
+        {
+            std::cout << "discover: " << g[u].name << std::endl;
+        }
+        template <typename Vertex, typename Graph>
+        void finish_vertex(Vertex u, const Graph& g) const
+        {
+            std::cout << "finish: " << g[u].name << std::endl;
+        }
+        template <typename Edge, typename Graph>
+        void tree_edge(Edge e, const Graph& g) const
+        {
+            m_count += g[e].count;
+        }
+    };
+
+    long day07b_alt()
+    {
+        graph_t graph;
+        read_graph(graph);
+
+        // find start node
+        auto vp = vertices(graph);
+        auto v = vp.first;
+        while (v != vp.second)
+        {
+            if (graph[*v].name == magic_bag) 
+                break;
+            v++;
+        }
+        long count = 0;
+        dfs_count_visitor vis(count);
+        boost::depth_first_search(graph, boost::visitor(vis).root_vertex(*v));
+
+        return count - 1;
+    }
+#else
+    long day07b_alt() { return -1; }
+#endif
 };
