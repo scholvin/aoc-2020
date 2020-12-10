@@ -525,6 +525,10 @@ namespace week1
         breadth_first_search is O(V+E), the performance of this approach is O(V*(V+E)). There's surely a better way, 
         though it's worth nothing that this implementation is about 12x faster than mine above (day07a).
 
+        Extra credit for some future night when you're bored and lonely: implement this part using Boost's
+        johnson_all_pairs_shortest_paths algo, which runs in O(V E lg V). I think this is hard because the graph
+        needs to be implemented using their property_map model for that algo. Much drudgery.
+
         For the second part, I got really hung up trying to use boost::depth_first_search. But that's not applicable
         here, because even though I have modeled this as a graph, we really need to do a broader, expansive traversal
         of the graph. Consider the hierarchy:
