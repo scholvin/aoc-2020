@@ -394,27 +394,25 @@ namespace week1
     }
 
     // day 7
-    const std::string day07filename = "../data/day07.dat";
+    const std::string DAY07_FILENAME = "../data/day07.dat";
     struct bag_info { std::string name; long count; };
     struct bag_comp { bool operator()(const bag_info& l, const bag_info& r) const { return l.name < r.name; }};
     typedef std::set<bag_info, bag_comp> bagset_t;
     typedef std::map<std::string, bagset_t> bagmap_t;
-
-    const std::string magic_bag = "shiny gold";
+    const std::regex LINE_RE("([a-z]+ [a-z]+) bags contain(.+)");
+    const std::regex CONTAIN_RE(" ([0-9]+) ([a-z]+ [a-z]+) bag[s]?");
+    const std::string MAGIC_BAG = "shiny gold";
 
     void day07load_bagmap(bagmap_t& bagmap)
     {
-        std::ifstream infile(day07filename);
+        std::ifstream infile(DAY07_FILENAME);
         std::string line;
-
-        std::regex line_re("([a-z]+ [a-z]+) bags contain(.+)");
-        std::regex contain_re(" ([0-9]+) ([a-z]+ [a-z]+) bag[s]?");
 
         while (std::getline(infile, line))
         {
             bagset_t inside;
             std::smatch sm1;
-            std::regex_search(line, sm1, line_re);
+            std::regex_search(line, sm1, LINE_RE);
             std::string outside = sm1.str(1); // container color
             std::string second = sm1.str(2);
             std::vector<std::string> inners;
@@ -426,7 +424,7 @@ namespace week1
                     break;
                 }
                 std::smatch sm2;
-                std::regex_search(inner, sm2, contain_re);
+                std::regex_search(inner, sm2, CONTAIN_RE);
                 // 1st = number, 2nd = name
                 bag_info contained = { sm2.str(2), std::stoi(sm2.str(1)) };
                 inside.insert(contained);
@@ -479,9 +477,9 @@ namespace week1
         long paths = 0;
         for (auto o: bagmap)
         {
-            if (o.first == magic_bag)
+            if (o.first == MAGIC_BAG)
                 continue;
-            if (day07path_exists(bagmap, o.first, magic_bag))
+            if (day07path_exists(bagmap, o.first, MAGIC_BAG))
                 paths++;
         }
 
@@ -513,10 +511,38 @@ namespace week1
         day07load_bagmap(bagmap);
 
         // do something like a DFS from the "shiny gold" bag, counting up the inners
-        return day07dfs(bagmap, magic_bag) - 1; // don't count myself
+        return day07dfs(bagmap, MAGIC_BAG) - 1; // don't count myself
     }
 
-    // https://stackoverflow.com/a/49232741
+    /*
+        OK, so from here down, I did a second implementation of the day 7 problems using the boost graph library.
+        I modeled the bag hierarchy as a directed graph, with each node being the "color" of the bag and each edge
+        being the number of bags contained. In other words, for an edge e from u->v, the weight of the edge is how
+        many v can be contained in a u.
+
+        For the first part (for every bag, does a path exist to the shiny gold one?) a breadth first search works.
+        I implemented the visitor to simply set a boolean to true for each traversal. If the performance of the Boost
+        breadth_first_search is O(V+E), the performance of this approach is O(V*(V+E)). There's surely a better way, 
+        though it's worth nothing that this implementation is about 12x faster than mine above (day07a).
+
+        For the second part, I got really hung up trying to use boost::depth_first_search. But that's not applicable
+        here, because even though I have modeled this as a graph, we really need to do a broader, expansive traversal
+        of the graph. Consider the hierarchy:
+
+             A
+            / \
+           B   C
+              / \
+             B   D
+             
+        Node B needs to be considered twice in the accounting. But a proper DFS algorithm expends a lot of brainpower
+        coloring nodes so they only get visited once. It's the wrong tool for the job. So I reimplemented the exact
+        logic that I got working for my homebrew data structure above (day07b), and there was no performance 
+        difference to speak of. Whether the code is easier to read,  or if there is value in using a "well-known" 
+        library helps with clarity, are left as judgement calls for the observer. I leave it here for posterity.
+    */
+
+    // help from: https://stackoverflow.com/a/49232741
     struct vertex_prop_t { std::string name; boost::default_color_type color; };
     struct edge_prop_t { long count; };
     using graph_t = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, vertex_prop_t, edge_prop_t>;
@@ -527,15 +553,13 @@ namespace week1
     {
         std::map<std::string, vertex_t> vmap;
 
-        std::ifstream infile(day07filename);
+        std::ifstream infile(DAY07_FILENAME);
         std::string line;
-        const std::regex line_re("([a-z]+ [a-z]+) bags contain(.+)");
-        const std::regex contain_re(" ([0-9]+) ([a-z]+ [a-z]+) bag[s]?");
 
         while (std::getline(infile, line))
         {
             std::smatch sm1;
-            std::regex_search(line, sm1, line_re);
+            std::regex_search(line, sm1, LINE_RE);
             std::string source = sm1.str(1); // source vertex name
             std::string second = sm1.str(2);
             std::vector<std::string> inners;
@@ -547,7 +571,7 @@ namespace week1
                     break;
                 }
                 std::smatch sm2;
-                std::regex_search(inner, sm2, contain_re);
+                std::regex_search(inner, sm2, CONTAIN_RE);
                 long count = std::stol(sm2.str(1));  // edge weight
                 std::string dest = sm2.str(2);       // dest vertex name
 
@@ -605,10 +629,10 @@ namespace week1
         auto vp = vertices(graph);
         for (auto v = vp.first; v != vp.second; ++v)
         {
-            if (graph[*v].name == magic_bag)
+            if (graph[*v].name == MAGIC_BAG)
                 continue;
             bool matched = false;
-            bfs_match_visitor vis(magic_bag, matched);
+            bfs_match_visitor vis(MAGIC_BAG, matched);
             boost::breadth_first_search(graph, *v, boost::color_map(boost::get(&vertex_prop_t::color, graph)).visitor(vis));
             if (matched)
                 matches++;
@@ -617,29 +641,24 @@ namespace week1
         return matches;
     }
 
-#if 0
-    // this doesn't work at all yet
-    class dfs_count_visitor : public boost::default_dfs_visitor
+    long day07dfs_alt(const graph_t& graph, vertex_t start)
     {
-        long& m_count;
-    public:
-        dfs_count_visitor(long& count) : m_count(count) { }
-        template <typename Vertex, typename Graph>
-        void discover_vertex(Vertex u, const Graph& g) const 
+        long level = 0;
+
+        if (boost::out_degree(start, graph) == 0)
         {
-            std::cout << "discover: " << g[u].name << std::endl;
+            // end of the road - just me
+            return 1;
         }
-        template <typename Vertex, typename Graph>
-        void finish_vertex(Vertex u, const Graph& g) const
+
+        auto ep = boost::out_edges(start, graph);
+        for (auto edge_it = ep.first; edge_it != ep.second; edge_it++)
         {
-            std::cout << "finish: " << g[u].name << std::endl;
+            level += graph[*edge_it].count * day07dfs_alt(graph, boost::target(*edge_it, graph));
         }
-        template <typename Edge, typename Graph>
-        void tree_edge(Edge e, const Graph& g) const
-        {
-            m_count += g[e].count;
-        }
-    };
+        
+        return level + 1;
+    }
 
     long day07b_alt()
     {
@@ -651,17 +670,12 @@ namespace week1
         auto v = vp.first;
         while (v != vp.second)
         {
-            if (graph[*v].name == magic_bag) 
+            if (graph[*v].name == MAGIC_BAG) 
                 break;
             v++;
         }
-        long count = 0;
-        dfs_count_visitor vis(count);
-        boost::depth_first_search(graph, boost::visitor(vis).root_vertex(*v));
 
-        return count - 1;
+        // don't count myself
+        return day07dfs_alt(graph, *v) - 1;
     }
-#else
-    long day07b_alt() { return -1; }
-#endif
 };
