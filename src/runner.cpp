@@ -34,8 +34,10 @@ void runner::run_all() const
         run_impl(it.first, it.second);
     }
     auto end = chrono::steady_clock::now();
-    std::cout << setw(36) << chrono::duration_cast<chrono::microseconds>(end - start).count() << "µs"
-              << endl;   
+    auto micros = chrono::duration_cast<chrono::microseconds>(end - start).count();
+    std::cout << "TOTAL:"
+              << setw(30) << micros << "µs"
+              << " (" << setprecision(4) << micros / 1000000.0 << "s)" << endl;
 }
 
 std::string runner::get_keys() const
