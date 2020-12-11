@@ -336,15 +336,6 @@ namespace week2
             seats.push_back(line);
         }
 
-        auto print = [](const seatmap_t& s)
-        {
-            for (auto row: s)
-                std::cout << row << std::endl;
-            std::cout << std::endl;
-        };
-
-        //print(seats);
-
         // for legibility
         const size_t ROWS = seats.size();
         const size_t COLS = seats[0].size();
@@ -375,9 +366,11 @@ namespace week2
                     }
                 }
             }
-            //print(next);
+
             if (next == seats)
                 break;
+            
+            // tried this with just swapping pointers and it didn't materially affect performance
             seats = next;
         }
 
