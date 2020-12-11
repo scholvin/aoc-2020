@@ -322,12 +322,13 @@ namespace week2
         return dp[u];
     }
 
-    long day11a()
+    typedef std::vector<std::string> seatmap_t;
+    typedef std::function<long(size_t, size_t, size_t, size_t, const seatmap_t&)> day11func_t;
+
+    long day11worker(day11func_t occ_adj, long smax)
     {
         std::ifstream infile("../data/day11.dat");
         std::string line;
-
-        typedef std::vector<std::string> seatmap_t;
 
         seatmap_t seats;
         while (std::getline(infile, line))
@@ -335,23 +336,18 @@ namespace week2
             seats.push_back(line);
         }
 
+        auto print = [](const seatmap_t& s)
+        {
+            for (auto row: s)
+                std::cout << row << std::endl;
+            std::cout << std::endl;
+        };
+
+        //print(seats);
+
         // for legibility
         const size_t ROWS = seats.size();
         const size_t COLS = seats[0].size();
-
-        auto occ_adj = [&](size_t row, size_t col, const seatmap_t& lseats) -> long 
-        {
-            long n = 0;
-            for (size_t r = (row == 0 ? 0 : row - 1); r <= (row == ROWS-1 ? ROWS-1 : row+1); r++)
-                for (size_t c = (col == 0 ? 0 : col - 1); c <= (col == COLS-1 ? COLS-1 : col+1); c++)
-                {
-                    if (r == row && c == col)
-                        continue;
-                    if (lseats[r][c] == '#')
-                        n++;
-                }
-            return n;
-        };
 
         while (true)
         {
@@ -365,20 +361,21 @@ namespace week2
                         next[row][col] = '.';
                     else if (seats[row][col] == 'L')
                     {
-                        if (occ_adj(row, col, seats) == 0)
+                        if ((occ_adj)(row, col, ROWS, COLS, seats) == 0)
                             next[row][col] = '#';
                         else
                             next[row][col] = 'L';
                     }
                     else if (seats[row][col] == '#')
                     {
-                        if (occ_adj(row, col, seats) >= 4)
+                        if ((occ_adj)(row, col, ROWS, COLS, seats) >= smax)
                             next[row][col] = 'L';
                         else
                             next[row][col] = '#';
                     }
                 }
             }
+            //print(next);
             if (next == seats)
                 break;
             seats = next;
@@ -393,8 +390,62 @@ namespace week2
         return occupied;
     }
 
+    long day11a()
+    {
+        auto occ_adj = [](size_t row, size_t col, size_t ROWS, size_t COLS, const seatmap_t& lseats) -> long
+        {
+            long n = 0;
+            for (size_t r = (row == 0 ? 0 : row - 1); r <= (row == ROWS-1 ? ROWS-1 : row+1); r++)
+                for (size_t c = (col == 0 ? 0 : col - 1); c <= (col == COLS-1 ? COLS-1 : col+1); c++)
+                {
+                    if (r == row && c == col)
+                        continue;
+                    if (lseats[r][c] == '#')
+                        n++;
+                }
+            return n;
+        };
+        return day11worker(occ_adj, 4);
+    }
+
     long day11b()
     {
-        return -1;
+        auto occ_adj = [](size_t row, size_t col, size_t ROWS, size_t COLS, const seatmap_t& lseats) -> long
+        {
+            long n = 0;
+            size_t r, c;
+
+            // making use of the fact that taking a size_t below zero makes a big number, as long as
+            // r and c are < ROWS and COLS we're in range
+
+            // north
+            r = row-1; c = col;
+            while (r < ROWS && c < COLS) { if (lseats[r][c] != '.') { if (lseats[r][c] == '#') n++; break; } r--; }
+            // northwest
+            r = row-1; c = col-1;
+            while (r < ROWS && c < COLS) { if (lseats[r][c] != '.') { if (lseats[r][c] == '#') n++; break; } r--; c--; }
+            // west
+            r = row; c = col-1;
+            while (r < ROWS && c < COLS) { if (lseats[r][c] != '.') { if (lseats[r][c] == '#') n++; break; } c--; }
+            // southwest
+            r = row+1; c = col-1;
+            while (r < ROWS && c < COLS) { if (lseats[r][c] != '.') { if (lseats[r][c] == '#') n++; break; } r++; c--; }
+            // south
+            r = row+1; c = col;
+            while (r < ROWS && c < COLS) { if (lseats[r][c] != '.') { if (lseats[r][c] == '#') n++; break; } r++; }
+            // southeast
+            r = row+1; c = col+1;
+            while (r < ROWS && c < COLS) { if (lseats[r][c] != '.') { if (lseats[r][c] == '#') n++; break; } r++; c++; }
+            // east
+            r = row; c = col+1;
+            while (r < ROWS && c < COLS) { if (lseats[r][c] != '.') { if (lseats[r][c] == '#') n++; break; } c++; }
+            // northeast
+            r = row-1; c = col+1;
+            while (r < ROWS && c < COLS) { if (lseats[r][c] != '.') { if (lseats[r][c] == '#') n++; break; } r--; c++; }
+
+            return n;
+        };
+
+        return day11worker(occ_adj, 5);
     }
 };
