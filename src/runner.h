@@ -7,8 +7,12 @@
 class runner
 {
 public:
+	struct new_order
+	{
+		bool operator()(const std::string& left, const std::string& right) const;
+	};
 	typedef std::function<long(void)> basic_func_t;
-	typedef std::map<std::string, basic_func_t> method_map_t;
+	typedef std::map<std::string, basic_func_t, new_order> method_map_t;
 
 	void add(const method_map_t& map);
 

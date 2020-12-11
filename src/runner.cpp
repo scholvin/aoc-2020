@@ -34,7 +34,7 @@ void runner::run_all() const
         run_impl(it.first, it.second);
     }
     auto end = chrono::steady_clock::now();
-    std::cout << setw(34) << chrono::duration_cast<chrono::microseconds>(end - start).count() << "µs"
+    std::cout << setw(36) << chrono::duration_cast<chrono::microseconds>(end - start).count() << "µs"
               << endl;   
 }
 
@@ -54,7 +54,22 @@ void runner::run_impl(const string& id, basic_func_t func) const
     long answer = (func)();
     auto end = chrono::steady_clock::now();
     std::cout << setw(6) << id 
-              << " answer:" << setw(12) << answer 
+              << " answer:" << setw(14) << answer
               << setw(8) << chrono::duration_cast<chrono::microseconds>(end - start).count() << "µs"
               << endl;   
+}
+
+bool runner::new_order::operator()(const string& left, const string& right) const
+{
+    // idea is to make 10a come after 9b - this is serious overkill
+    auto lindex = left.find_first_not_of("0123456789");
+    int lnum = stoi(left.substr(0, lindex));
+    string lstr = left.substr(lindex);
+    auto rindex = right.find_first_not_of("0123456789");
+    int rnum = stoi(right.substr(0, rindex));
+    string rstr = right.substr(rindex);
+
+    if (lnum == rnum)
+        return lstr < rstr;
+    return lnum < rnum;
 }
