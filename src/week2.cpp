@@ -321,4 +321,80 @@ namespace week2
         }
         return dp[u];
     }
+
+    long day11a()
+    {
+        std::ifstream infile("../data/day11.dat");
+        std::string line;
+
+        typedef std::vector<std::string> seatmap_t;
+
+        seatmap_t seats;
+        while (std::getline(infile, line))
+        {
+            seats.push_back(line);
+        }
+
+        // for legibility
+        const size_t ROWS = seats.size();
+        const size_t COLS = seats[0].size();
+
+        auto occ_adj = [&](size_t row, size_t col, const seatmap_t& lseats) -> long 
+        {
+            long n = 0;
+            for (size_t r = (row == 0 ? 0 : row - 1); r <= (row == ROWS-1 ? ROWS-1 : row+1); r++)
+                for (size_t c = (col == 0 ? 0 : col - 1); c <= (col == COLS-1 ? COLS-1 : col+1); c++)
+                {
+                    if (r == row && c == col)
+                        continue;
+                    if (lseats[r][c] == '#')
+                        n++;
+                }
+            return n;
+        };
+
+        while (true)
+        {
+            seatmap_t next;
+            next.resize(ROWS, std::string(COLS, ' '));
+            for (size_t row = 0; row < ROWS; row++)
+            {
+                for (size_t col = 0; col < COLS; col++)
+                {
+                    if (seats[row][col] == '.')
+                        next[row][col] = '.';
+                    else if (seats[row][col] == 'L')
+                    {
+                        if (occ_adj(row, col, seats) == 0)
+                            next[row][col] = '#';
+                        else
+                            next[row][col] = 'L';
+                    }
+                    else if (seats[row][col] == '#')
+                    {
+                        if (occ_adj(row, col, seats) >= 4)
+                            next[row][col] = 'L';
+                        else
+                            next[row][col] = '#';
+                    }
+                }
+            }
+            if (next == seats)
+                break;
+            seats = next;
+        }
+
+        long occupied = 0;
+        for (size_t row = 0; row < ROWS; row++)
+            for (size_t col = 0; col < COLS; col++)
+                if (seats[row][col] == '#')
+                    occupied++;
+
+        return occupied;
+    }
+
+    long day11b()
+    {
+        return -1;
+    }
 };
