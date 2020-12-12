@@ -19,6 +19,10 @@ int main(int argc, char** argv)
              << "   or: aoc-2020 all" << endl;
         return 1;
     }
+
+    // note: many of these solutions will throw a std::runtime_error if there's a problem.
+    // we intentionally don't catch it, since a core dump will be more helpful for debugging
+
     if (std::string(argv[1]) == "all")
     {
         run.run_all();
