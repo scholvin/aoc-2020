@@ -495,7 +495,6 @@ namespace week2
                 case 'F': ship_x += (way_x * val); ship_y += (way_y * val); break;
                 case 'R':
                 case 'L':
-                {
                     if ((inst == 'R' && val == 90) || (inst == 'L' && val == 270))
                     {
                         long tmp = way_x;
@@ -515,7 +514,7 @@ namespace week2
                     }
                     else
                         throw std::runtime_error("bad turn");
-                } break;
+                    break;
                 default: throw std::runtime_error("bad instruction");
             }
         }
