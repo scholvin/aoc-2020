@@ -369,7 +369,7 @@ namespace week2
 
             if (next == seats)
                 break;
-            
+
             // tried this with just swapping pointers and it didn't materially affect performance
             seats = next;
         }
@@ -440,5 +440,85 @@ namespace week2
         };
 
         return day11worker(occ_adj, 5);
+    }
+
+    long day12a()
+    {
+        std::ifstream infile("../data/day12.dat");
+        std::string line;
+
+        long heading = 90, x = 0, y = 0;
+
+        while (std::getline(infile, line))
+        {
+            char inst = line[0];
+            long val = std::stol(line.substr(1));
+            switch (inst)
+            {
+                case 'N': y += val; break;
+                case 'E': x += val; break;
+                case 'S': y -= val; break;
+                case 'W': x -= val; break;
+                case 'L': heading -= val; if (heading < 0) heading += 360; break;
+                case 'R': heading = (heading + val) % 360; break;
+                case 'F': switch(heading)
+                {
+                    case   0: y += val; break;
+                    case  90: x += val; break;
+                    case 180: y -= val; break;
+                    case 270: x -= val; break;
+                    default: throw std::runtime_error("bad degrees");
+                } break;
+                default: throw std::runtime_error("bad code");
+            }
+        }
+        return std::abs(x) + std::abs(y);
+    }
+
+    long day12b()
+    {
+        std::ifstream infile("../data/day12.dat");
+        std::string line;
+
+        long ship_x = 0, ship_y = 0, way_x = 10, way_y = 1;
+
+        while (std::getline(infile, line))
+        {
+            char inst = line[0];
+            long val = std::stol(line.substr(1));
+            switch (inst)
+            {
+                case 'N': way_y += val; break;
+                case 'E': way_x += val; break;
+                case 'S': way_y -= val; break;
+                case 'W': way_x -= val; break;
+                case 'F': ship_x += (way_x * val); ship_y += (way_y * val); break;
+                case 'R':
+                case 'L':
+                {
+                    if ((inst == 'R' && val == 90) || (inst == 'L' && val == 270))
+                    {
+                        long tmp = way_x;
+                        way_x = way_y;
+                        way_y = -tmp;
+                    }
+                    else if ((inst == 'L' && val == 90) || (inst == 'R' && val == 270))
+                    {
+                        long tmp = way_y;
+                        way_y = way_x;
+                        way_x = -tmp;
+                    }
+                    else if (val == 180)
+                    {
+                        way_x *= -1;
+                        way_y *= -1;
+                    }
+                    else
+                        throw std::runtime_error("bad turn");
+                } break;
+                default: throw std::runtime_error("bad code");
+            }
+        }
+        return std::abs(ship_x) + std::abs(ship_y);
     }
 };
