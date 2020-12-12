@@ -467,9 +467,9 @@ namespace week2
                     case  90: x += val; break;
                     case 180: y -= val; break;
                     case 270: x -= val; break;
-                    default: throw std::runtime_error("bad degrees");
+                    default: throw std::runtime_error("bad turn");
                 } break;
-                default: throw std::runtime_error("bad code");
+                default: throw std::runtime_error("bad instruction");
             }
         }
         return std::abs(x) + std::abs(y);
@@ -516,7 +516,7 @@ namespace week2
                     else
                         throw std::runtime_error("bad turn");
                 } break;
-                default: throw std::runtime_error("bad code");
+                default: throw std::runtime_error("bad instruction");
             }
         }
         return std::abs(ship_x) + std::abs(ship_y);
