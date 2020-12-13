@@ -8,6 +8,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/topological_sort.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace week2 
 {
@@ -519,5 +520,91 @@ namespace week2
             }
         }
         return std::abs(ship_x) + std::abs(ship_y);
+    }
+
+    long day13a()
+    {
+        std::ifstream infile("../data/day13.dat");
+        std::string line;
+
+        std::getline(infile, line);
+        long start = std::stol(line);
+
+        std::getline(infile, line);
+        std::vector<std::string> raw;
+        boost::split(raw, line, boost::is_any_of(","));
+        std::set<long> buses;
+        for (auto r: raw)
+        {
+            if (r == "x") continue;
+            buses.insert(std::stol(r));
+        }
+
+        long t = start;
+        while (true)
+        {
+            for (auto b: buses)
+            {
+                if (t % b == 0)
+                {
+                    return (t - start) * b;
+                }
+            }
+            t++;
+        }
+
+        // shouldn't happen
+        return -1;
+    }
+
+    long day13b()
+    {
+        std::ifstream infile("../data/day13.dat");
+        std::string line;
+
+        std::getline(infile, line); // throw away first line
+
+        std::vector<std::pair<long, long>> buses; // first=bus ID, second=offset
+        std::getline(infile, line);
+        std::vector<std::string> raw;
+        boost::split(raw, line, boost::is_any_of(","));
+        long offset = 0;
+        for (auto r: raw)
+        {
+            if (r != "x")
+            {
+                buses.push_back(std::make_pair(std::stol(r), offset));
+            }
+            offset++;
+        }
+
+        // is ts valid for the buses from [0, bus]?
+        auto eval = [&](long ts, size_t bus) -> bool
+        {
+            for (size_t i = 0; i <= bus; i++)
+            {
+                if ((ts + buses[i].second) % (buses[i].first) != 0)
+                    return false;
+            }
+            return true;
+        };
+
+        //std::cout << eval(3416, 2) << " " << eval(3417, 2) << " " << eval(3418, 2) << std::endl;
+
+        long ts = 0; 
+        long skip = buses[0].first;
+
+        for (size_t bus = 1; bus < buses.size(); bus++)        
+        {
+            ts += skip;
+            std::cout << "top of loop bus=" << bus << " skip=" << skip << " ts=" << ts << std::endl;
+            while (!eval(ts, bus))
+                ts++;
+            std::cout << "mid of loop bus=" << bus << " skip=" << skip << " ts=" << ts << std::endl;
+            skip *= buses[bus].first;
+            
+            std::cout << "end of loop bus=" << bus << " skip=" << skip << " ts=" << ts << std::endl;
+        }
+        return ts;
     }
 };
