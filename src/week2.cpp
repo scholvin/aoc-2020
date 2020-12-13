@@ -578,33 +578,23 @@ namespace week2
             offset++;
         }
 
-        // is ts valid for the buses from [0, bus]?
-        auto eval = [&](long ts, size_t bus) -> bool
-        {
-            for (size_t i = 0; i <= bus; i++)
-            {
-                if ((ts + buses[i].second) % (buses[i].first) != 0)
-                    return false;
-            }
-            return true;
-        };
+        // build the solution one bus at a time, taking advantage of the fact that the bus numbers
+        // are all (apparently) prime. we can skip by their partial product as we go. it's sort of
+        // like a sieve.
 
-        //std::cout << eval(3416, 2) << " " << eval(3417, 2) << " " << eval(3418, 2) << std::endl;
-
+        // I think it could also be done by some formulation of the Chinese Remainder Theorem, or
+        // maybe this is that?
         long ts = 0; 
         long skip = buses[0].first;
 
         for (size_t bus = 1; bus < buses.size(); bus++)        
         {
-            ts += skip;
-            std::cout << "top of loop bus=" << bus << " skip=" << skip << " ts=" << ts << std::endl;
-            while (!eval(ts, bus))
-                ts++;
-            std::cout << "mid of loop bus=" << bus << " skip=" << skip << " ts=" << ts << std::endl;
+            while ((ts + buses[bus].second) % buses[bus].first != 0)
+                ts += skip;
+            // for the next time around, we can skip even larger groups
             skip *= buses[bus].first;
-            
-            std::cout << "end of loop bus=" << bus << " skip=" << skip << " ts=" << ts << std::endl;
         }
+
         return ts;
     }
 };
