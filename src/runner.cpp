@@ -26,6 +26,10 @@ void runner::run(const std::string& id) const
     }
 }
 
+const int ANSWER_WIDTH = 16;
+const int ID_WIDTH = 6;
+const int MICROS_WIDTH = 8;
+
 void runner::run_all() const
 {
     auto start = chrono::steady_clock::now();
@@ -36,7 +40,7 @@ void runner::run_all() const
     auto end = chrono::steady_clock::now();
     auto micros = chrono::duration_cast<chrono::microseconds>(end - start).count();
     std::cout << "TOTAL:"
-              << setw(30) << micros << "µs"
+              << setw(ID_WIDTH + ANSWER_WIDTH + MICROS_WIDTH + 2) << micros << "µs"
               << " (" << setprecision(4) << micros / 1000000.0 << "s)" << endl;
 }
 
@@ -55,9 +59,9 @@ void runner::run_impl(const string& id, basic_func_t func) const
     auto start = chrono::steady_clock::now();
     long answer = (func)();
     auto end = chrono::steady_clock::now();
-    std::cout << setw(6) << id 
-              << " answer:" << setw(14) << answer
-              << setw(8) << chrono::duration_cast<chrono::microseconds>(end - start).count() << "µs"
+    std::cout << setw(ID_WIDTH) << id
+              << " answer:" << setw(ANSWER_WIDTH) << answer
+              << setw(MICROS_WIDTH) << chrono::duration_cast<chrono::microseconds>(end - start).count() << "µs"
               << endl;   
 }
 
