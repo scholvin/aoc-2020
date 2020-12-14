@@ -597,4 +597,118 @@ namespace week2
 
         return ts;
     }
+
+    const std::regex MASK_RE("mask = ([10X]{36})");
+    const std::regex ASST_RE("mem\\[([0-9]+)\\] = ([0-9]+)");
+    const int BITS = 36;
+    typedef std::bitset<BITS> bits_t;
+
+    // was used in debugging
+    std::string to_str(const bits_t& bits)
+    {
+        std::stringstream ss;
+        ss << bits;
+        return ss.str();
+    }
+
+    long day14a()
+    {
+        std::ifstream infile("../data/day14.dat");
+        std::string line;
+
+        std::map<long, bits_t> mem;
+        bits_t one_mask;   // we will or with this to set 1's
+        bits_t zero_mask;  // we will and with this to set 0's
+
+        while (std::getline(infile, line))
+        {
+            std::smatch sm;
+            if (std::regex_search(line, sm, MASK_RE))
+            {
+                //std::cout << "mask->" << sm.str(1) << std::endl;
+                for (size_t i = 0; i < BITS; i++)
+                {
+                    one_mask.set(BITS - 1 - i, sm.str(1)[i] == '1');
+                    zero_mask.set(BITS - 1 - i, sm.str(1)[i] != '0');
+                }
+                //std::cout << "zero->" << zero_mask << std::endl
+                //          << " one->" << one_mask << std::endl;
+            }
+            else if (std::regex_search(line, sm, ASST_RE))
+            {
+                // std::cout << "addr->" << sm.str(1) << " val->" << sm.str(2) << std::endl;
+                long addr = std::stol(sm.str(1));
+                bits_t val(std::stol(sm.str(2)));
+                val |= one_mask;
+                val &= zero_mask;
+                mem[addr] = val;
+            }
+            else
+                throw std::runtime_error("bad data/parse");
+        }
+
+        long sum = 0;
+        for (auto m: mem)
+            sum += m.second.to_ulong();
+        return sum;
+    }
+
+    long day14b()
+    {
+        std::ifstream infile("../data/day14.dat");
+        std::string line;
+
+        // note: this problem is tedious, and the implementation reflects it.
+
+        std::map<long, bits_t> mem;
+        std::string mask;
+        std::vector<size_t> xbits;   // this contains the bit positions of all the X's in the mask        
+
+        while (std::getline(infile, line))
+        {
+            std::smatch sm;
+            if (std::regex_search(line, sm, MASK_RE))
+            {
+                mask = sm.str(1);
+                xbits.clear();
+                for (size_t i = 0; i < BITS; i++)
+                    if (mask[BITS - 1 - i] == 'X')
+                        xbits.push_back(i);
+            }
+            else if (std::regex_search(line, sm, ASST_RE))
+            {
+                // base address & value
+                bits_t addr_in(std::stol(sm.str(1)));
+                long val = std::stol(sm.str(2));
+
+                // set the bits of the base address to 1 where the mask was '1'
+                for (size_t i = 0; i < BITS; i++)
+                    if (mask[BITS - 1 - i] == '1')
+                        addr_in.set(i, true);
+
+                // use a variable ("counter") to just be the bit pattern via simple incrementing
+                // then use it to dereference the xbits vector and create a new address based on the base
+                // there is surely a better way to do this, but this particular probkem is so
+                // contrived that I don't feel the need to find it
+                for (long counter = 0; counter < (1 << xbits.size()); counter++)
+                {
+                    bits_t addr(addr_in);
+                    long inner = 1;
+                    for (size_t i = 0; i < xbits.size(); i++)
+                    {
+                        addr.set(xbits[i], counter & inner);
+                        inner <<= 1;
+                    }
+                    mem[addr.to_ulong()] = val;
+                }
+            }
+            else
+                throw std::runtime_error("bad data/parse");
+        }
+
+        long sum = 0;
+        for (auto m: mem)
+            sum += m.second.to_ulong();
+        return sum;
+    }
 };
