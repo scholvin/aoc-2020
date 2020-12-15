@@ -8,4 +8,4 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 add_compile_options(-std=c++2a -ggdb -Wall)  # -Og makes it faster, but hard to debug
 
-add_executable(aoc-2020 main.cpp runner.cpp week1.cpp week2.cpp)
+add_executable(aoc-2020 main.cpp runner.cpp week1.cpp week2.cpp week3.cpp)

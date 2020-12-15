@@ -1,6 +1,7 @@
 #include "runner.h"
 #include "week1.h"
 #include "week2.h"
+#include "week3.h"
 
 #include <iostream>
 
@@ -10,6 +11,7 @@ int main(int argc, char** argv)
     runner run;
     run.add(week1::method_map);
     run.add(week2::method_map);
+    run.add(week3::method_map);
 
     if (argc == 1)
     {
