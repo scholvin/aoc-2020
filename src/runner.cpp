@@ -28,7 +28,7 @@ void runner::run(const std::string& id) const
 
 const int ANSWER_WIDTH = 16;
 const int ID_WIDTH = 6;
-const int MICROS_WIDTH = 8;
+const int MICROS_WIDTH = 12;
 
 void runner::run_all() const
 {

@@ -4,12 +4,11 @@
 
 namespace week3
 {
-    long day15a();
-    long day15b();
+    long day15(size_t turns);
 
 	const runner::method_map_t method_map =
 	{
-        { "15a", &day15a },
-        { "15b", &day15b },
+        { "15a", std::bind(&day15, 2020) },
+        { "15b", std::bind(&day15, 30000000) },
     };
 };
