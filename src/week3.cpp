@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <regex>
 #include <algorithm>
+#include <set>
+
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/algorithm/string.hpp>
@@ -53,19 +55,48 @@ namespace week3
 
         // assumes range 1 is strictly less than range 2 (which appears to be the case in the data if not the spec)
         bool is_valid(long f) const { return (f >= lo1 && f <= hi1) || (f >= lo2 && f <= hi2); }
+
+        // for debugging
+        std::string str() const
+        {
+            return tag + ": " + std::to_string(lo1) + "/" + std::to_string(hi1) + " "
+                       + std::to_string(lo2) + "/" + std::to_string(hi2);
+        }
     };
 
     typedef std::vector<long> ticket_t;
+    typedef std::vector<ticket_t> tickets_t;
+    typedef std::vector<range> ranges_t;
+
+    // if any field is invalid, the ticket is invalid
+    // if every field is valid, the ticket is valid
+    bool is_ticket_valid(const ranges_t& ranges, const ticket_t ticket)
+    {
+        for (auto value: ticket)
+        {
+            bool valid = false;
+            for (auto r: ranges)
+            {
+                if (r.is_valid(value))
+                {
+                    valid = true;
+                    break;
+                }
+            }
+            if (!valid)
+                return false;
+        }
+        return true;
+    }
 
     const std::regex RANGE_RE("([a-z ]+): ([0-9]+)-([0-9]+) or ([0-9]+)-([0-9]+)");
 
-    long day16a()
+    void day16read(ranges_t& ranges, ticket_t& my_ticket, tickets_t& nearby_tickets)
     {
         // reading this file is a pain in the arse
         std::ifstream infile("../data/day16.dat");
         std::string line;
 
-        std::vector<range> ranges;
         while (true)
         {
             std::getline(infile, line);
@@ -77,13 +108,11 @@ namespace week3
 
         std::getline(infile, line); // throw away "your ticket:"
         std::getline(infile, line);
-        ticket_t my_ticket;
         boost::tokenizer<> tok(line);
         std::transform(tok.begin(), tok.end(), std::back_inserter(my_ticket), &boost::lexical_cast<long,std::string>);
 
         std::getline(infile, line); // throw away blank line
         std::getline(infile, line); // throw away "nearby tickets:"
-        std::vector<ticket_t> nearby_tickets;
         while (std::getline(infile, line))
         {
             ticket_t next;
@@ -91,6 +120,14 @@ namespace week3
             std::transform(tok.begin(), tok.end(), std::back_inserter(next), &boost::lexical_cast<long,std::string>);
             nearby_tickets.push_back(next);
         }
+    }
+
+    long day16a()
+    {
+        std::vector<range> ranges;
+        ticket_t my_ticket;
+        tickets_t nearby_tickets;
+        day16read(ranges, my_ticket, nearby_tickets);
 
         long sum = 0;
         for (auto t: nearby_tickets)
@@ -115,7 +152,61 @@ namespace week3
 
             }
         }
-
         return sum;
+    }
+
+    long day16b()
+    {
+        std::vector<range> ranges;
+        ticket_t my_ticket;
+        tickets_t nearby_tickets;
+        day16read(ranges, my_ticket, nearby_tickets);
+
+        // discard invalid tickets
+        tickets_t valid_tickets;
+        for (auto t: nearby_tickets)
+            if (is_ticket_valid(ranges, t))
+                valid_tickets.push_back(t);
+
+        const size_t POSITIONS = ranges.size(); // for clarity
+
+        // this vector maps position to a set of possible solutions
+        std::vector<std::set<size_t>> solution(POSITIONS);
+        // initialize each position to all possible solutions
+        for (size_t s = 0; s < POSITIONS; s++)
+            for (size_t r = 0; r < POSITIONS; r++)
+                solution[s].insert(r);
+
+        // eliminate possible solutions where a position matches no rules
+        // this is something like O(positions * tickets * rules * log(positions))
+        for (size_t pos = 0; pos < POSITIONS; pos++)
+            for (auto t: valid_tickets)
+                for (size_t r = 0; r < ranges.size(); r++)
+                    if (!ranges[r].is_valid(t[pos]))
+                        solution[pos].erase(r);
+
+        // now we do process of elimination - find solutions with only 1 range, and then remove that range from everyone else
+        // note, if that's not how this is set up, this thing may never terminate
+        // this is something like O(positions * positions * log(positions))
+        std::vector<size_t> final(POSITIONS, std::numeric_limits<size_t>::max());
+        while (true)
+        {
+            size_t s = 0;
+            while (solution[s].size() != 1 && s < POSITIONS)
+                s++;
+            if (s == POSITIONS)
+                break;
+            final[s] = *(solution[s].begin());
+            for (size_t x = 0; x < POSITIONS; x++)
+                solution[x].erase(final[s]);
+        }
+
+        // finally, dereference my_ticket values as the question asks
+        long product = 1;
+        for (size_t t = 0; t < POSITIONS; t++)
+            if (ranges[final[t]].tag.substr(0, 9) == "departure")
+                product *= my_ticket[t];
+
+        return product;
     }
 }
