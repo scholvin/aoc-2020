@@ -171,11 +171,11 @@ namespace week3
         const size_t POSITIONS = ranges.size(); // for clarity
 
         // this vector maps position to a set of possible solutions
-        std::vector<std::set<size_t>> solution(POSITIONS);
+        std::vector<std::set<size_t>> solutions(POSITIONS);
         // initialize each position to all possible solutions
         for (size_t s = 0; s < POSITIONS; s++)
             for (size_t r = 0; r < POSITIONS; r++)
-                solution[s].insert(r);
+                solutions[s].insert(r);
 
         // eliminate possible solutions where a position matches no rules
         // this is something like O(positions * tickets * rules * log(positions))
@@ -183,7 +183,7 @@ namespace week3
             for (auto t: valid_tickets)
                 for (size_t r = 0; r < ranges.size(); r++)
                     if (!ranges[r].is_valid(t[pos]))
-                        solution[pos].erase(r);
+                        solutions[pos].erase(r);
 
         // now we do process of elimination - find solutions with only 1 range, and then remove that range from everyone else
         // note, if that's not how this is set up, this thing may never terminate
@@ -192,13 +192,13 @@ namespace week3
         while (true)
         {
             size_t s = 0;
-            while (solution[s].size() != 1 && s < POSITIONS)
+            while (solutions[s].size() != 1 && s < POSITIONS)
                 s++;
             if (s == POSITIONS)
                 break;
-            final[s] = *(solution[s].begin());
+            final[s] = *(solutions[s].begin());
             for (size_t x = 0; x < POSITIONS; x++)
-                solution[x].erase(final[s]);
+                solutions[x].erase(final[s]);
         }
 
         // finally, dereference my_ticket values as the question asks
