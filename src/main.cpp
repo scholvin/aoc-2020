@@ -24,18 +24,7 @@ int main(int argc, char** argv)
 
     // note: many of these solutions will throw a std::runtime_error if there's a problem.
     // we intentionally don't catch it, since a core dump will be more helpful for debugging
-
-    if (std::string(argv[1]) == "all")
-    {
-        run.run_all();
-    }
-    else
-    {
-        for (int i = 1; i < argc; ++i)
-        {
-            run.run(argv[i]);
-        }
-    }
+    run.run(argc, argv);
     return 0;
 }
 
