@@ -13,7 +13,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/container_hash/hash.hpp>
 
-namespace week3 
+namespace week3
 {
     const std::vector<long> DAY15_DATA = { 9, 19, 1, 6, 0, 5, 4 };
 
@@ -216,7 +216,7 @@ namespace week3
 
     long day17a()
     {
-        /* 
+        /*
             cheat alert!
 
             Since multi-dimensional C-style arrays are an absolute nightmare, I am using std::array.
@@ -225,7 +225,7 @@ namespace week3
 
             This approach also makes it nearly impossible to generalize for the second part.
 
-            Another option would be to just track some data structure of active points, maybe a hash. 
+            Another option would be to just track some data structure of active points, maybe a hash.
             I will try that in the alt implementation. Betting it won't be as fast as this, but it will
             use less memory, and be more in the spirit of the challenge, maybe.
         */
