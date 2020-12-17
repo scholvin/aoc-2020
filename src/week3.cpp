@@ -212,34 +212,22 @@ namespace week3
         return product;
     }
 
-#if 0    
-    struct coordinates { long x, y, z; };
-
-    bool operator==(const coordinates& lhs, const coordinates& rhs)
-    {
-        return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
-    }
-
-    struct coordinates_hasher
-    {
-        std::size_t operator()(const coordinates& c) const noexcept
-        {
-            std::size_t seed = 110571;
-            boost::hash_combine(seed, c.x);
-            boost::hash_combine(seed, c.y);
-            boost::hash_combine(seed, c.z);
-            return seed;
-        }
-    };
-
-    // if a coordinate (x, y, z) is in the set, that's active
-    // if a coordinate (x, y, z) is not in the set, that's inactive
-    typedef std::unordered_set<coordinates, coordinates_hasher> universe_t;
-#endif
-
     long day17a()
     {
-        // cheat alert
+        /* 
+            cheat alert!
+
+            Since multi-dimensional C-style arrays are an absolute nightmare, I am using std::array.
+            But that requires knowing the array size at compile time. So I totally, 100% cheated here,
+            and looked at the data file to set GRID below.
+
+            This approach also makes it nearly impossible to generalize for the second part.
+
+            Another option would be to just track some data structure of active points, maybe a hash. 
+            I will try that in the alt implementation. Betting it won't be as fast as this, but it will
+            use less memory, and be more in the spirit of the challenge, maybe.
+        */
+
         const size_t GRID = 8;
         const size_t GENERATIONS = 6;
         const size_t N = GRID + GENERATIONS * 2;
@@ -267,13 +255,17 @@ namespace week3
             universe_t curr{};
             // for each cell (x0, y0, z0) in the previous generation:
             for (size_t x0 = 0; x0 < N; x0++)
+            {
                 for (size_t y0 = 0; y0 < N; y0++)
+                {
                     for (size_t z0 = 0; z0 < N; z0++)
                     {
                         // find all the active neighbors of (x0, y0, z0)
                         long neighbors = 0;
                         for (size_t x = x0 - 1; x <= x0 + 1; x++)
+                        {
                             for (size_t y = y0 - 1; y <= y0 + 1; y++)
+                            {
                                 for (size_t z = z0 - 1; z <= z0 + 1; z++)
                                 {
                                     // since these are size_t's, they'll never be < 0, and >= N is out of range, too
@@ -281,8 +273,13 @@ namespace week3
                                     if (x >= N || y >= N || z >= N || (x == x0 && y == y0 && z == z0))
                                         continue;
                                     if (prev[x][y][z])
-                                        neighbors++; // possible optimization - bust out if neighbors gets to 4
+                                        neighbors++;
+                                    if (neighbors == 4)
+                                        goto toomany; // we can stop evaluating this cell
                                 }
+                            }
+                        }
+toomany:
                         // now we know # of active neighbors
                         if (prev[x0][y0][z0] && (neighbors == 2 || neighbors == 3))
                         {
@@ -297,6 +294,91 @@ namespace week3
                         else
                             curr[x0][y0][z0] = false; // this may be wrong, or unnecessary
                     }
+                }
+            }
+            prev = curr;
+        }
+
+        return active;
+    }
+
+    long day17b()
+    {
+        const size_t GRID = 8;
+        const size_t GENERATIONS = 6;
+        const size_t N = GRID + GENERATIONS * 2;
+        // see note in 17a about how this is basically not generalizable without insane metaprogramming
+        typedef std::array<std::array<std::array<std::array<bool, N>, N>, N>, N> universe_t;
+
+        std::ifstream infile("../data/day17.dat");
+        std::string line;
+
+        universe_t prev = {};
+        size_t y_p = GENERATIONS, z_p = N / 2, w_p = N / 2;
+        while (std::getline(infile, line))
+        {
+            for (size_t x_p = 0; x_p < line.size(); x_p++)
+            {
+                if (line[x_p] == '#')
+                    prev[x_p + GENERATIONS][y_p][z_p][w_p] = true;
+            }
+            y_p++;
+        }
+
+        long active;
+        for (size_t g = 1; g <= GENERATIONS; g++)
+        {
+            active = 0;
+            universe_t curr{};
+            // for each cell (x0, y0, z0, w0) in the previous generation:
+            for (size_t x0 = 0; x0 < N; x0++)
+            {
+                for (size_t y0 = 0; y0 < N; y0++)
+                {
+                    for (size_t z0 = 0; z0 < N; z0++)
+                    {
+                        for (size_t w0 = 0; w0 < N; w0++)
+                        {
+                            // find all the active neighbors of (x0, y0, z0, w0)
+                            long neighbors = 0;
+                            for (size_t x = x0 - 1; x <= x0 + 1; x++)
+                            {
+                                for (size_t y = y0 - 1; y <= y0 + 1; y++)
+                                {
+                                    for (size_t z = z0 - 1; z <= z0 + 1; z++)
+                                    {
+                                        for (size_t w = w0 - 1; w <= w0 + 1; w++)
+                                        {
+                                            // since these are size_t's, they'll never be < 0, and >= N is out of range, too
+                                            // also, don't eval the cell in the middle, that's the starting point
+                                            if (x >= N || y >= N || z >= N || w >= N || (x == x0 && y == y0 && z == z0 && w == w0))
+                                                continue;
+                                            if (prev[x][y][z][w])
+                                                neighbors++;
+                                            if (neighbors == 4)
+                                                goto toomany; // we can stop evaluating this cell
+                                        }
+                                    }
+                                }
+                            }
+toomany:
+                            // now we know # of active neighbors
+                            if (prev[x0][y0][z0][w0] && (neighbors == 2 || neighbors == 3))
+                            {
+                                curr[x0][y0][z0][w0] = true;
+                                active++;
+                            }
+                            else if (!prev[x0][y0][z0][w0] && neighbors == 3)
+                            {
+                                curr[x0][y0][z0][w0] = true;
+                                active++;
+                            }
+                            else
+                                curr[x0][y0][z0][w0] = false; // this may be wrong, or unnecessary
+                        }
+                    }
+                }
+            }
             prev = curr;
         }
 
