@@ -135,7 +135,7 @@ namespace week3
             for (auto v: t)
             {
                 bool valid = false;
-                // the ticket values thare not valid in any range
+                // find the ticket values that are not valid in any range
                 for (auto r: ranges)
                 {
                     if (r.is_valid(v))
