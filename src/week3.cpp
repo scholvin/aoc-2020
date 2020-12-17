@@ -6,10 +6,12 @@
 #include <regex>
 #include <algorithm>
 #include <set>
+#include <unordered_set>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/container_hash/hash.hpp>
 
 namespace week3 
 {
@@ -208,5 +210,96 @@ namespace week3
                 product *= my_ticket[t];
 
         return product;
+    }
+
+#if 0    
+    struct coordinates { long x, y, z; };
+
+    bool operator==(const coordinates& lhs, const coordinates& rhs)
+    {
+        return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
+    }
+
+    struct coordinates_hasher
+    {
+        std::size_t operator()(const coordinates& c) const noexcept
+        {
+            std::size_t seed = 110571;
+            boost::hash_combine(seed, c.x);
+            boost::hash_combine(seed, c.y);
+            boost::hash_combine(seed, c.z);
+            return seed;
+        }
+    };
+
+    // if a coordinate (x, y, z) is in the set, that's active
+    // if a coordinate (x, y, z) is not in the set, that's inactive
+    typedef std::unordered_set<coordinates, coordinates_hasher> universe_t;
+#endif
+
+    long day17a()
+    {
+        // cheat alert
+        const size_t GRID = 8;
+        const size_t GENERATIONS = 6;
+        const size_t N = GRID + GENERATIONS * 2;
+        typedef std::array<std::array<std::array<bool, N>, N>, N> universe_t;
+
+        std::ifstream infile("../data/day17.dat");
+        std::string line;
+
+        universe_t prev = {};
+        size_t y_p = GENERATIONS, z_p = N / 2;
+        while (std::getline(infile, line))
+        {
+            for (size_t x_p = 0; x_p < line.size(); x_p++)
+            {
+                if (line[x_p] == '#')
+                    prev[x_p + GENERATIONS][y_p][z_p] = true;
+            }
+            y_p++;
+        }
+
+        long active;
+        for (size_t g = 1; g <= GENERATIONS; g++)
+        {
+            active = 0;
+            universe_t curr{};
+            // for each cell (x0, y0, z0) in the previous generation:
+            for (size_t x0 = 0; x0 < N; x0++)
+                for (size_t y0 = 0; y0 < N; y0++)
+                    for (size_t z0 = 0; z0 < N; z0++)
+                    {
+                        // find all the active neighbors of (x0, y0, z0)
+                        long neighbors = 0;
+                        for (size_t x = x0 - 1; x <= x0 + 1; x++)
+                            for (size_t y = y0 - 1; y <= y0 + 1; y++)
+                                for (size_t z = z0 - 1; z <= z0 + 1; z++)
+                                {
+                                    // since these are size_t's, they'll never be < 0, and >= N is out of range, too
+                                    // also, don't eval the cell in the middle, that's the starting point
+                                    if (x >= N || y >= N || z >= N || (x == x0 && y == y0 && z == z0))
+                                        continue;
+                                    if (prev[x][y][z])
+                                        neighbors++; // possible optimization - bust out if neighbors gets to 4
+                                }
+                        // now we know # of active neighbors
+                        if (prev[x0][y0][z0] && (neighbors == 2 || neighbors == 3))
+                        {
+                            curr[x0][y0][z0] = true;
+                            active++;
+                        }
+                        else if (!prev[x0][y0][z0] && neighbors == 3)
+                        {
+                            curr[x0][y0][z0] = true;
+                            active++;
+                        }
+                        else
+                            curr[x0][y0][z0] = false; // this may be wrong, or unnecessary
+                    }
+            prev = curr;
+        }
+
+        return active;
     }
 }
