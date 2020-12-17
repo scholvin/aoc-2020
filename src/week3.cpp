@@ -212,6 +212,8 @@ namespace week3
         return product;
     }
 
+    const size_t GENERATIONS = 6;
+
     long day17a()
     {
         /* 
@@ -305,7 +307,6 @@ toomany:
     long day17b()
     {
         const size_t GRID = 8;
-        const size_t GENERATIONS = 6;
         const size_t N = GRID + GENERATIONS * 2;
         // see note in 17a about how this is basically not generalizable without insane metaprogramming
         typedef std::array<std::array<std::array<std::array<bool, N>, N>, N>, N> universe_t;
@@ -383,5 +384,111 @@ toomany:
         }
 
         return active;
+    }
+
+    /*
+        Feeling shame about the memory-intensive approach above, I tried to be smarter, and track only
+        the set of active cells. For part a, it takes about twice as long using a std::unordered_set, and
+        substantially longer than that using std::set, though there may be a bug in that implementation.
+
+        I'm leaving the port of this approach part b for a future time.
+    */
+
+    struct coordinates { long x, y, z; };
+
+    bool operator==(const coordinates& lhs, const coordinates& rhs) { return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z; }
+
+    struct coordinates_hasher {
+        size_t operator()(const coordinates& c) const
+        {
+            size_t seed = 110571;
+            boost::hash_combine(seed, c.x);
+            boost::hash_combine(seed, c.y);
+            boost::hash_combine(seed, c.z);
+            return seed;
+        }
+    };
+
+    struct coordinates_comparator {
+        bool operator()(const coordinates& lhs, const coordinates& rhs) const
+        {
+            return std::tie(lhs.x, lhs.y, lhs.z) < std::tie(rhs.x, rhs.y, rhs.z);
+        }
+    };
+
+    typedef std::unordered_set<coordinates, coordinates_hasher> alt_universe_t;
+
+    // this was slow and bad
+    // typedef std::set<coordinates, coordinates_comparator> alt_universe_t;
+
+    long day17a_alt()
+    {
+        std::ifstream infile("../data/day17.dat");
+        std::string line;
+
+        alt_universe_t prev;
+        long x_min(0), y_min(0), z_min(0), x_max(0), y_max(0), z_max(0);
+        long y_p = 0;
+        while (std::getline(infile, line))
+        {
+            for (size_t x = 0; x < line.size(); ++x)
+            {
+                if (line[x] == '#')
+                {
+                    prev.insert({(long)x, y_p, 0});
+                    if ((long)x > x_max) x_max = x;
+                    if (y_p > y_max) y_max = y_p;
+                }
+            }
+            y_p++;
+        }
+
+        for (size_t g = 1; g <= GENERATIONS; g++)
+        {
+            alt_universe_t curr;
+
+            x_min--; y_min--; z_min--; x_max++; y_max++; z_max++;
+            // for each cell (x0, y0, z0) in the previous generation:
+            for (long x0 = x_min; x0 <= x_max; x0++)
+            {
+                for (long y0 = y_min; y0 <= y_max; y0++)
+                {
+                    for (long z0 = z_min; z0 <= z_max; z0++)
+                    {
+                        // find all the active neighbors of (x0, y0, z0)
+                        long neighbors = 0;
+                        for (long x = x0 - 1; x <= x0 + 1; x++)
+                        {
+                            for (long y = y0 - 1; y <= y0 + 1; y++)
+                            {
+                                for (long z = z0 - 1; z <= z0 + 1; z++)
+                                {
+                                    // don't eval the cell in the middle, that's the starting point
+                                    if (x == x0 && y == y0 && z == z0)
+                                        continue;
+                                    if (prev.count({x, y, z}))
+                                        neighbors++;
+                                    if (neighbors == 4)
+                                        goto toomany; // we can stop evaluating this cell
+                                }
+                            }
+                        }
+toomany:
+                        // now we know # of active neighbors
+                        if (prev.count({x0,y0,z0}) && (neighbors == 2 || neighbors == 3))
+                        {
+                            curr.insert({x0,y0,z0});
+                        }
+                        else if (!prev.count({x0,y0,z0}) && neighbors == 3)
+                        {
+                            curr.insert({x0,y0,z0});
+                        }
+                    }
+                }
+            }
+            prev = curr;
+        }
+
+        return prev.size();
     }
 }

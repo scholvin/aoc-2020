@@ -15,7 +15,7 @@ void runner::add(const method_map_t& map)
 }
 
 const int ANSWER_WIDTH = 16;
-const int ID_WIDTH = 6;
+const int ID_WIDTH = 7;
 const int MICROS_WIDTH = 12;
 
 void runner::run(int argc, char** argv)
