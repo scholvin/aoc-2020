@@ -19,6 +19,3 @@ make
 This generates the `aoc-2020` executable in the build directory. Run it from there, as it will look to `../data` for input files.
 Command line help is available from the executable.
 
-
-
-
