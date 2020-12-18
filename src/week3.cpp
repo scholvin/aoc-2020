@@ -502,12 +502,14 @@ toomany:
                 work.push(t - '0');
             else if (t == '+' || t == '*')
             {
-                long x = work.top(); work.pop();
-                long y = work.top(); work.pop();
+                long x = work.top();
+                work.pop();
+                long y = work.top();
+                work.pop();
                 if (t == '+')
                     work.push(x + y);
                 else
-                    work.push (x * y);
+                    work.push(x * y);
             }
         }
         return work.top();
@@ -526,6 +528,7 @@ toomany:
             std::string postfix;
             std::stack<char> stack;
 
+            // assumes input is well formed - will surely core dump if not
             for (auto t: line)
             {
                 if (t == ' ')
