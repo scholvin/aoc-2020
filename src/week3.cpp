@@ -493,30 +493,28 @@ toomany:
         return prev.size();
     }
 
-    /*
+    long eval_postfix(const std::string& postfix)
+    {
+        std::stack<long> work;
+        for (auto t: postfix)
+        {
+            if (t >= '0' && t <= '9')
+                work.push(t - '0');
+            else if (t == '+' || t == '*')
+            {
+                long x = work.top(); work.pop();
+                long y = work.top(); work.pop();
+                if (t == '+')
+                    work.push(x + y);
+                else
+                    work.push (x * y);
+            }
+        }
+        return work.top();
+    }
 
-    from https://www.chris-j.co.uk/parsing.php
-
-    For each token in turn in the input infix expression:
-        If the token is an operand, append it to the postfix output.
-
-        If the token is a binary operator A then:
-            If A is left-associative, while there is an operator B of higher or equal precidence than A at the top of the stack, pop B off the stack and append it to the output.
-            If A is right-associative, while there is an operator B of higher precidence than A at the top of the stack, pop B off the stack and append it to the output.
-            Push A onto the stack.
-
-        If the token is an opening bracket, then push it onto the stack.
-
-        If the token is a closing bracket:
-            Pop operators off the stack and append them to the output, until the operator at the top of the stack is a opening bracket.
-            Pop the opening bracket off the stack.
-
-    When all the tokens have been read:
-        While there are still operator tokens in the stack:
-            Pop the operator on the top of the stack, and append it to the output.
-    */
-
-    long day18a()
+    // got some help from https://www.chris-j.co.uk/parsing.php
+    long day18(bool equal_precedence)
     {
         std::ifstream infile("../data/day18.dat");
         std::string line;
@@ -534,9 +532,29 @@ toomany:
                     continue;
                 else if (t >= '0' && t <= '9')
                     postfix.push_back(t);
-                else if (t == '+' || t == '*')
+                else if (t == '+')
                 {
-                    while (stack.size() && (stack.top() == '*' || stack.top() == '+'))
+                    if (equal_precedence)
+                    {
+                        while (stack.size() && (stack.top() == '+' || stack.top() == '*'))
+                        {
+                            postfix.push_back(stack.top());
+                            stack.pop();
+                        }
+                    }
+                    else
+                    {
+                        while (stack.size() && stack.top() == '+')
+                        {
+                            postfix.push_back(stack.top());
+                            stack.pop();
+                        }
+                    }
+                    stack.push(t);
+                }
+                else if (t == '*')
+                {
+                    while (stack.size() && (stack.top() == '+' || stack.top() == '*'))
                     {
                         postfix.push_back(stack.top());
                         stack.pop();
@@ -561,25 +579,8 @@ toomany:
                 stack.pop();
             }
 
-             std::cout << line << std::endl << postfix << std::endl;
             // at this point, postfix is an RPN expression ready to evaluate
-             std::stack<long> work;
-             for (auto t: postfix)
-             {
-                if (t >= '0' && t <= '9')
-                    work.push(t - '0');
-                else if (t == '+' || t == '*')
-                {
-                    long x = work.top(); work.pop();
-                    long y = work.top(); work.pop();
-                    if (t == '+')
-                        work.push(x + y);
-                    else
-                        work.push (x * y);
-                }
-             }
-             std::cout << work.top() << std::endl;
-             sum += work.top();
+            sum += eval_postfix(postfix);
         }
         return sum;
     }
