@@ -6,7 +6,8 @@ set(BOOST_ROOT /usr/include/boost169)
 find_package(Boost)
 include_directories(${Boost_INCLUDE_DIRS})
 
-# TODO: include creation of  day19.y from day19.dat via src/make-bison.awk
+# TODO: include creation of the bison files from the data files via src/make-bison.awk, for example:
+# awk -f src/make-bison.awk < data/day19a.dat > src/day19a.y
 find_package(BISON)
 BISON_TARGET(Day19a day19a.y ${CMAKE_CURRENT_BINARY_DIR}/day19a.cpp)
 BISON_TARGET(Day19b day19b.y ${CMAKE_CURRENT_BINARY_DIR}/day19b.cpp COMPILE_FLAGS --name-prefix=zz)
