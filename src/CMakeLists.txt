@@ -9,8 +9,8 @@ include_directories(${Boost_INCLUDE_DIRS})
 # TODO: include creation of the bison files from the data files via src/make-bison.awk, for example:
 # awk -f src/make-bison.awk < data/day19a.dat > src/day19a.y
 find_package(BISON)
-BISON_TARGET(Day19a day19a.y ${CMAKE_CURRENT_BINARY_DIR}/day19a.cpp)
-BISON_TARGET(Day19b day19b.y ${CMAKE_CURRENT_BINARY_DIR}/day19b.cpp COMPILE_FLAGS --name-prefix=zz)
+BISON_TARGET(Day19a day19a.y ${CMAKE_CURRENT_BINARY_DIR}/day19a.cpp COMPILE_FLAGS "--name-prefix=day19a -Wno-conflicts-sr -Wno-conflicts-rr")
+BISON_TARGET(Day19b day19b.y ${CMAKE_CURRENT_BINARY_DIR}/day19b.cpp COMPILE_FLAGS "--name-prefix=day19b -Wno-conflicts-sr -Wno-conflicts-rr")
 
 add_compile_options(-std=c++2a -ggdb -Wall)  # -Og makes it faster, but hard to debug
 

@@ -14,26 +14,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/container_hash/hash.hpp>
 
-extern int yyparse();
-extern int zzparse();
-
-// day19 stuff has to live out here
-const std::string* day19_str;
-size_t day19_idx;
-int yylex()
-{
-    if (day19_idx < day19_str->size())
-        return ((*day19_str)[day19_idx++]);
-    return EOF;
-};
-
-int zzlex()
-{
-    if (day19_idx < day19_str->size())
-        return ((*day19_str)[day19_idx++]);
-    return EOF;
-};
-
 namespace week3
 {
     const std::vector<long> DAY15_DATA = { 9, 19, 1, 6, 0, 5, 4 };
@@ -607,25 +587,89 @@ toomany:
         }
         return sum;
     }
+}
 
+/*
+    Day 19. A journey like no other. I spent some time in the morning googling context-free grammars and how to create pushdown
+    automata (both deterministic and non-) from them. Because, most generally, that's the gig here. You get a grammar and you
+    need to determine if a set of words are in its language. I remember coding exactly this at some point in my undergraduate
+    career, and hating every second of it. I hated that class and that professor, too.
+
+    So I figured, why reinvent this wheel when a perfectly good version of it is sitting right there in /usr/bin. I decided
+    to convert the grammar rules specified into something bison(1) could parse. I did the test data by hand, basically converting
+    every rule of the form
+
+        0: 4 1 5
+
+    into
+
+        _0: _4 _1 _5
+
+    because non-terminals basically have to look like C identifiers (can't start with a digit). Since we don't actually have to
+    do anything with this language except to check its syntax, there's nothing else to do in the grammar. The awk script also
+    generates the declarations to make the bison(1) input file fully ready to go.
+
+    From there, I had to refamiliarize myself with how to call the parser in bison(1), and how it calls the lexer. The gist of
+    it is you call the yyparse() function, which calls the yylex() function, which returns one token at a time and then EOF
+    when it's done. Note that the "yy" can be changed with a --name-prefix argument to bison(1), so I did used day19a and day19b,
+    since the challenge actually changes the grammar and the same parser can't be used.
+
+    There was one last trick. The default LALR parser that bison(1) wants to use for some reason couldn't work with this grammar on
+    the actual, large data. It reported a large number of warnings like
+
+        day19.y:16.6-12: warning: rule useless in parser due to conflicts [-Wother]
+        _32: _14 _96  | _64 _16  ;
+             ^^^^^^^
+
+    for any rules that had the terminal token rule as a target. The resultant parser failed every string. After some late night
+    googling, I discovered that you can choose a different parser, the GLR, with the %parser directive in the yacc file.
+    Without fully understanding why it would work, I tried it, and it worked. Looking further, it seems this parser is necessarily
+    slower than LALR, but it's fine for this purpose. I spent way, way too much time polishiing this apple. But I'm still glad
+    I didn't have to write my own shift/reduce parser from scratch.
+
+    Future enhancement: modify CMakeLists.txt to not require the manual step of generating the .y files.  That's hairy, too,
+    if I recall correctly.
+*/
+
+// day19 stuff has to live outside any namespace - good old fashioned C
+extern int day19aparse();
+extern int day19bparse();
+
+char const* day19_ptr;
+
+int day19alex()
+{
+    if (*day19_ptr)
+        return *day19_ptr++;
+    return EOF;
+};
+
+int day19blex()
+{
+    if (*day19_ptr)
+        return *day19_ptr++;
+    return EOF;
+};
+
+namespace week3
+{
     long day19a()
     {
         std::ifstream infile("../data/day19a.dat");
         std::string line;
 
-        // read the rules
+        // skip the rules
         while (true)
         {
             std::getline(infile, line);
             if (line.size() == 0)
-                break; // move on to the words
+                break;
         }
         long valid = 0;
         while (std::getline(infile, line))
         {
-            day19_str = &line;
-            day19_idx = 0;
-            if (yyparse() == 0)
+            day19_ptr = line.c_str();
+            if (day19aparse() == 0)
                 valid++;
         }
         return valid;
@@ -636,19 +680,18 @@ toomany:
         std::ifstream infile("../data/day19b.dat");
         std::string line;
 
-        // read the rules
+        // skip the rules
         while (true)
         {
             std::getline(infile, line);
             if (line.size() == 0)
-                break; // move on to the words
+                break;
         }
         long valid = 0;
         while (std::getline(infile, line))
         {
-            day19_str = &line;
-            day19_idx = 0;
-            if (zzparse() == 0)
+            day19_ptr = line.c_str();
+            if (day19bparse() == 0)
                 valid++;
         }
         return valid;
