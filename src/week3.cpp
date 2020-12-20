@@ -605,9 +605,17 @@ toomany:
 
         _0: _4 _1 _5
 
-    because non-terminals basically have to look like C identifiers (can't start with a digit). Since we don't actually have to
-    do anything with this language except to check its syntax, there's nothing else to do in the grammar. The awk script also
-    generates the declarations to make the bison(1) input file fully ready to go.
+    because non-terminals basically have to look like C identifiers (can't start with a digit). We also have to change
+
+        4: "a"
+
+    into
+
+        _4: 'a'
+
+    to keep the token processing trivial. Since we don't actually have to _do_ anything with this language except to check
+    its syntax, there's nothing else to do in the grammar. The awk script also generates the declarations to make the bison(1)
+    input file fully ready to go.
 
     From there, I had to refamiliarize myself with how to call the parser in bison(1), and how it calls the lexer. The gist of
     it is you call the yyparse() function, which calls the yylex() function, which returns one token at a time and then EOF
