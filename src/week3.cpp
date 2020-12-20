@@ -14,6 +14,18 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/container_hash/hash.hpp>
 
+extern int yyparse();
+
+// day19 stuff has to live out here
+const std::string* day19_str;
+size_t day19_idx;
+int yylex()
+{
+    if (day19_idx < day19_str->size())
+        return ((*day19_str)[day19_idx++]);
+    return EOF;
+};
+
 namespace week3
 {
     const std::vector<long> DAY15_DATA = { 9, 19, 1, 6, 0, 5, 4 };
@@ -587,4 +599,28 @@ toomany:
         }
         return sum;
     }
+
+    long day19a()
+    {
+        std::ifstream infile("../data/day19.dat");
+        std::string line;
+
+        // read the rules
+        while (true)
+        {
+            std::getline(infile, line);
+            if (line.size() == 0)
+                break; // move on to the words
+        }
+        long valid = 0;
+        while (std::getline(infile, line))
+        {
+            day19_str = &line;
+            day19_idx = 0;
+            if (yyparse() == 0)
+                valid++;
+        }
+        return valid;
+    }
 }
+

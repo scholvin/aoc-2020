@@ -11,6 +11,7 @@ namespace week3
     long day17b();
     long day17a_alt();
     long day18(bool equal_precedence);
+    long day19a();
 
     const runner::method_map_t method_map =
     {
@@ -23,5 +24,6 @@ namespace week3
         { "17a_alt", &day17a_alt },
         { "18a", std::bind(&day18, true) },
         { "18b", std::bind(&day18, false) },
+        { "19a", &day19a },
     };
 };
