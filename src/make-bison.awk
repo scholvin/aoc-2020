@@ -4,6 +4,7 @@ BEGIN {
     print "int yyerror(const char* s);";
     print "%}";
     print "%start _0";
+    print "%glr-parser"
     print "%%";
 }
 {

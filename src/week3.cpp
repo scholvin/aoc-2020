@@ -15,11 +15,19 @@
 #include <boost/container_hash/hash.hpp>
 
 extern int yyparse();
+extern int zzparse();
 
 // day19 stuff has to live out here
 const std::string* day19_str;
 size_t day19_idx;
 int yylex()
+{
+    if (day19_idx < day19_str->size())
+        return ((*day19_str)[day19_idx++]);
+    return EOF;
+};
+
+int zzlex()
 {
     if (day19_idx < day19_str->size())
         return ((*day19_str)[day19_idx++]);
@@ -602,7 +610,7 @@ toomany:
 
     long day19a()
     {
-        std::ifstream infile("../data/day19.dat");
+        std::ifstream infile("../data/day19a.dat");
         std::string line;
 
         // read the rules
@@ -618,6 +626,29 @@ toomany:
             day19_str = &line;
             day19_idx = 0;
             if (yyparse() == 0)
+                valid++;
+        }
+        return valid;
+    }
+
+    long day19b()
+    {
+        std::ifstream infile("../data/day19b.dat");
+        std::string line;
+
+        // read the rules
+        while (true)
+        {
+            std::getline(infile, line);
+            if (line.size() == 0)
+                break; // move on to the words
+        }
+        long valid = 0;
+        while (std::getline(infile, line))
+        {
+            day19_str = &line;
+            day19_idx = 0;
+            if (zzparse() == 0)
                 valid++;
         }
         return valid;
