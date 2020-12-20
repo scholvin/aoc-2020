@@ -77,6 +77,11 @@ void runner::run_impl(const string& id, basic_func_t func)
 
 bool runner::new_order::operator()(const string& left, const string& right) const
 {
+    // degenerate case: someone passed in an invalid string
+    if ((left.size() && (left[0] < '0' || left[0] > '9')) ||
+        (right.size() && (right[0] < '0' || right[0] > '9')))
+        return left < right;
+
     // idea is to make 10a come after 9b - this is serious overkill
     auto lindex = left.find_first_not_of("0123456789");
     int lnum = stoi(left.substr(0, lindex));
