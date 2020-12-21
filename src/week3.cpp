@@ -850,13 +850,26 @@ namespace week3
 
         void solve()
         {
+            // there are many solutions - for now, we only care about the first one
+            if (s_finals.size())
+            {
+                s_depth--;
+                return;
+            }
+
             s_iterations++;
             s_depth++;
+            if (s_iterations % 100 == 0)
+            {
+                std::cout << "it=" << s_iterations << " d=" << s_depth << std::endl;
+                dump(std::cout);
+            }
+
             if (accept())
             {
                 std::cout << "ACCEPTING" << std::endl;
                 dump(std::cout);
-                dump_full(std::cout);
+                //dump_full(std::cout);
                 s_finals.push_back(*this);
                 s_depth--;
                 return;
@@ -891,11 +904,18 @@ namespace week3
                             {
                                 // this is worth trying
                                 std::cout << "candidate at d,x,y,t,r=" << s_depth << "," << x << "," << y << "," << t << "," << r << std::endl;
-                                candidate.dump(std::cout);
+                                //candidate.dump(std::cout);
                                 candidate.solve();
                             }
                         }
                     }
+
+                    if (s_depth == 49 && x == 0 && y == 4)
+                    {
+                         std::cout << "no alternatives at d,x,y=" << s_depth << "," << x << "," << y << std::endl;
+                         candidate.dump(std::cout);
+                    }
+
                     // backtrack - set the cell we were working on to empty and head back up
                     candidate.m_inner[x][y] = EMPTY_CELL;
                     s_depth--;
@@ -943,7 +963,7 @@ namespace week3
         bool reject() const
         {
             // first make sure we're not using a tile twice
-            std::set<size_t> used;
+            std::unordered_set<size_t> used;
             for (size_t x = 0; x < GRID; x++)
             {
                 for (size_t y = 0; y < GRID; y++)
@@ -1017,7 +1037,7 @@ namespace week3
         static constexpr cell_t EMPTY_CELL = { 666, 666 };
 
         // cheat alert! looked at the data, and there are 144 tiles, so assuming 12x12 solution for now
-        static const size_t GRID = 3;
+        static const size_t GRID = 12;
         typedef std::array<std::array<cell_t, GRID>, GRID> inner_t;
         inner_t m_inner;
 
