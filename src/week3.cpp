@@ -840,10 +840,12 @@ namespace week3
             if (s_finals.size() == 0)
                 return -1; // womp
 
-            return s_finals.front().m_tileset[m_inner[0][0].first].id() *
-                   s_finals.front().m_tileset[m_inner[0][GRID-1].first].id() *
-                   s_finals.front().m_tileset[m_inner[GRID-1][0].first].id() *
-                   s_finals.front().m_tileset[m_inner[GRID-1][GRID-1].first].id();
+            const auto& f = s_finals.front();
+
+            return f.m_tileset[f.m_inner[0][0].first].id() *
+                   f.m_tileset[f.m_inner[0][GRID-1].first].id() *
+                   f.m_tileset[f.m_inner[GRID-1][0].first].id() *
+                   f.m_tileset[f.m_inner[GRID-1][GRID-1].first].id();
         }
 
         void solve()
