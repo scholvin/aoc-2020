@@ -826,20 +826,28 @@ namespace week3
 
         void solve()
         {
-            if (reject())
-                return;
+            s_iterations++;
+            s_depth++;
             if (accept())
+            {
                 s_finals.push_back(*this);
+                s_depth--;
+                return;
+            }
+
             for (size_t x = 0; x < GRID; x++)
             {
                 for (size_t y = 0; x < GRID; y++)
                 {
                     if (m_inner[x][y] != EMPTY_CELL)
+                    {
+                        // keep searching until we find an empty cell
                         continue;
+                    }
 
-                    // x, y is the first empty cell
                     image candidate(*this);
-                    // find a tile to try there
+
+                    // x,y is the first empty cell, so find a tile/rotation to try there
                     for (size_t t = 0; t < m_tileset.size(); t++)
                     {
                         for (size_t r = 0; r < 4; r++)
@@ -848,16 +856,25 @@ namespace week3
                             candidate.m_inner[x][y].first = t;
                             candidate.m_inner[x][y].second = r;
                             if (candidate.reject())
+                            {
+                                // there's no point in trying this tile here
                                 continue;
+                            }
                             else
+                            {
+                                // this is worth trying
+                                std::cout << "recursing: d,x,y,t,r=" << s_depth << "," << x << "," << y << "," << t << "," << r << std::endl;
                                 candidate.solve();
+                            }
                         }
                     }
                     // backtrack - set the cell we were working on to empty and head back up
                     candidate.m_inner[x][y] = EMPTY_CELL;
+                    s_depth--;
                     return;
                 }
             }
+            throw std::logic_error("shouldn't get here");
         }
 
     private:
@@ -939,13 +956,15 @@ namespace week3
         static constexpr cell_t EMPTY_CELL = { std::numeric_limits<size_t>::max(), std::numeric_limits<size_t>::max() };
 
         // cheat alert! looked at the data, and there are 144 tiles, so assuming 12x12 solution for now
-        static const size_t GRID = 12;
+        static const size_t GRID = 3;
         typedef std::array<std::array<cell_t, GRID>, GRID> inner_t;
         inner_t m_inner;
 
         const tileset_t& m_tileset;
 
         static std::vector<image> s_finals;
+        static int s_depth;
+        static int s_iterations;
     };
 
     long day20a()
@@ -1020,4 +1039,6 @@ done:
 }
 
 std::vector<week3::image> week3::image::s_finals;
+int week3::image::s_depth = 0;
+int week3::image::s_iterations = 0;
 
