@@ -1128,19 +1128,23 @@ done:
 #endif
     }
 
-    long day21a()
+    long day21()
     {
         std::ifstream infile("../data/day21.dat");
         std::string line;
 
         typedef std::set<std::string> set_t;
 
-        // for each allergen, maintain sets of possible ingredients as we encounter new ingredients, run the intersection
+        // for each allergen, maintain a set of possible ingredients that could contain it
+        // if we encounter that allergen in the future, we will keep the intersection of that ingredient set with the set we already have
         std::map<std::string, set_t> processing;
-        std::multiset<std::string> all_ingredients; // multiset because we are counting dups
+
+        // we will also keep a count of how many times we encounter each ingredient (so use a multiset)
+        std::multiset<std::string> all_ingredients;
 
         while (std::getline(infile, line))
         {
+            // parsing mania
             // start by creating a set of ingredients for this line
             set_t ingredients;
             std::size_t paren = line.find('(');
@@ -1152,8 +1156,8 @@ done:
             for (auto ing: ingredients)
                 all_ingredients.insert(ing);
 
+            // next, parse out each allegen in the second part of the line
             boost::tokenizer<> tok(back);
-            // for each allergen in the second part of the line
             for (auto allergen = tok.begin(); allergen != tok.end(); ++allergen)
             {
                 auto proc = processing.find(*allergen);
@@ -1164,7 +1168,8 @@ done:
                 }
                 else
                 {
-                    // this allergen is in the map, so we calculate the intersection of all ingredients previously there
+                    // this allergen is in the map, so we calculate the intersection of the new ingredients
+                    // with the ingredients previously there, and store that intersection
                     set_t inter;
                     std::set_intersection(proc->second.begin(), proc->second.end(), ingredients.begin(), ingredients.end(), std::inserter(inter, inter.begin()));
                     proc->second = inter;
@@ -1172,10 +1177,10 @@ done:
             }
         }
 
-        // now we prune the processing list
-        //  find all allegens where ingredients.count() == 1,
-        //  remove that ingredient from all other allergens
-        //  iterate until everybody has count() == 1
+        // now we prune the processing list:
+        //   find all allegens where ingredients.count() == 1,
+        //   remove that ingredient from all other allergens' ingredient sets
+        //   iterate until all ingredient sets have count() == 1
 
         bool done = false;
         while (!done)
@@ -1185,7 +1190,7 @@ done:
             {
                 if (it1.second.size() == 1)
                 {
-                    // erase *it1.second.begin() from all second halves except this one
+                    // erase *it1.second.begin() from all sets except this one
                     for (auto& it2: processing)
                     {
                         if (it1 == it2)
@@ -1198,15 +1203,7 @@ done:
             }
         }
 
-        std::string partb;
-        for (auto it = processing.begin(); it != processing.end(); ++it)
-        {
-            if (it == processing.begin())
-                partb += *it->second.begin();
-            else
-                partb += "," + *it->second.begin();
-        }
-        std::cout << partb;
+        // at this point, the processing map should map 1 allergen to a set containing exactly 1 ingredient
 
         // for convenience, create a working set of the known allergen-containing ingredients
         set_t containing;
@@ -1222,6 +1219,22 @@ done:
             std::advance(it, count);
         }
 
+        // for part b, we already have all the data structures we need
+        // this is the first problem that expects a non-numeric input, so the runner is broken now
+        // TODO: modify the runner to handle function signatures other than long(void)
+        // for now, because exhaustion, just print the damn thing on stdout
+        std::string partb;
+        for (auto it = processing.begin(); it != processing.end(); ++it)
+        {
+            if (it == processing.begin())
+                partb += *it->second.begin();
+            else
+                partb += "," + *it->second.begin();
+        }
+        // part b
+        std::cout << "21b: " << partb << std::endl;
+
+        // part a
         return sum;
     }
 }
