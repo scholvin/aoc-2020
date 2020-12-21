@@ -704,5 +704,165 @@ namespace week3
         }
         return valid;
     }
+
+    class tile
+    {
+    public:
+        // cheat alert - looked at the data
+        // size of each individual tile is 10x10
+        static constexpr size_t GRID = 10;
+
+        // pass it a vector of MAX+1 strings - first is Tile: nnnnn, rest are lines as read in input
+        tile(const std::vector<std::string>& lines) : m_id(std::stol(lines[0].substr(5, lines[0].find(':') - 5)))
+        {
+            // set the first grid, then rotate it 3 times
+            for (size_t y = 1; y < lines.size(); y++)
+            {
+                for (size_t x = 0; x < lines[y].size(); x++)
+                {
+                    m_grids[0][x][y-1] = lines[y][x];
+                }
+            }
+
+            // rotate thrice - help from here https://www.codespeedy.com/rotate-a-matrix-in-cpp/
+            // oddly, they appear to be rotating CCW, not CW, but it's fine
+            for (size_t r = 1; r <= 3; r++)
+                for (size_t i = 0; i < GRID/2; i++)
+                    for (size_t j = i; j < GRID-i-1; j++)
+                    {
+                        m_grids[r][i][j]               = m_grids[r-1][GRID-1-j][i];
+                        m_grids[r][GRID-1-j][i]        = m_grids[r-1][GRID-1-i][GRID-1-j];
+                        m_grids[r][GRID-1-i][GRID-1-j] = m_grids[r-1][j][GRID-1-i];
+                        m_grids[r][j][GRID-1-i]        = m_grids[r-1][i][j];
+                    }
+        }
+
+        // for debugging
+        void dump(std::ostream& os) const
+        {
+            os << m_id << std::endl;
+            for (size_t y = 0; y < GRID; y++)
+            {
+                for (size_t r = 0; r < 4; r++)
+                {
+                    for (size_t x = 0; x < GRID; x++)
+                    {
+                        os << m_grids[r][x][y];
+                    }
+                    os << " ";
+                }
+                os << std::endl;
+            }
+        }
+
+        // does other at rotation his_rot match to the right of me at rotation my_rot?
+        bool match_right(size_t my_rot, const tile& other, size_t his_rot) const
+        {
+            for (size_t y = 0; y < GRID; y++)
+                if (m_grids[my_rot][GRID-1][y] != other.m_grids[his_rot][0][y])
+                    return false;
+            return true;
+        }
+
+        // does other at rotation his_rot match to the left of me at rotation my_rot?
+        bool match_left(size_t my_rot, const tile& other, size_t his_rot) const
+        {
+            for (size_t y = 0; y < GRID; y++)
+                if (m_grids[my_rot][0][y] != other.m_grids[his_rot][GRID-1][y])
+                    return false;
+            return true;
+        }
+
+        // does other at rotation his_rot match above me at rotation my_rot?
+        bool match_top(size_t my_rot, const tile& other, size_t his_rot) const
+        {
+            for (size_t x = 0; x < GRID; x++)
+                if (m_grids[my_rot][x][0] != other.m_grids[his_rot][x][GRID-1])
+                    return false;
+            return true;
+        }
+
+        // does other at rotation his_rot match below me at rotation my_rot?
+        bool match_bottom(size_t my_rot, const tile& other, size_t his_rot) const
+        {
+            for (size_t x = 0; x < GRID; x++)
+                if (m_grids[my_rot][x][GRID-1] != other.m_grids[his_rot][x][0])
+                    return false;
+            return true;
+        }
+
+    private:
+        // first index 0-3 is for the rotations
+        std::array<std::array<std::array<char, GRID>, GRID>, 4> m_grids;
+        long m_id;
+    };
+
+    long day20a()
+    {
+        std::ifstream infile("../data/day20.dat");
+        std::string line;
+
+        std::vector<tile> tiles;
+
+        while (true)
+        {
+            std::vector<std::string> batch;
+            for (size_t i = 0; i < tile::GRID + 1; i++)
+            {
+                std::getline(infile, line);
+                batch.push_back(line);
+            }
+            tiles.push_back(tile(batch));
+            // either read a blank line, or hit EOF
+            if (!std::getline(infile, line))
+                break;
+        }
+
+#if 0
+        // a big chunk of test code just to make sure the functions in the tile class do the right thing
+        // make sure the match_ functions find something and print the results for visual inspection
+        bool top = false, bottom = false, left = false, right = false;
+
+        for (size_t i = 0; i < tiles.size(); i++)
+            for (size_t j = i + 1; j < tiles.size(); j++)
+                for (size_t r = 0; r < 4; r++)
+                    for (size_t s = 0; s < 4; s++)
+                    {
+                        if (!right && tiles[i].match_right(r, tiles[j], s))
+                        {
+                            std::cout << "tile " << i << "." << r << " match_right " << j << "." << s << std::endl;
+                            tiles[i].dump(std::cout);
+                            tiles[j].dump(std::cout);
+                            right = true;
+                        }
+                        if (!left && tiles[i].match_left(r, tiles[j], s))
+                        {
+                            std::cout << "tile " << i << "." << r << " match_left " << j << "." << s << std::endl;
+                            tiles[i].dump(std::cout);
+                            tiles[j].dump(std::cout);
+                            left = true;
+                        }
+                        if (!top && tiles[i].match_top(r, tiles[j], s))
+                        {
+                            std::cout << "tile " << i << "." << r << " match_top " << j << "." << s << std::endl;
+                            tiles[i].dump(std::cout);
+                            tiles[j].dump(std::cout);
+                            top = true;
+                        }
+                        if (!bottom && tiles[i].match_bottom(r, tiles[j], s))
+                        {
+                            std::cout << "tile " << i << "." << r << " match_bottom " << j << "." << s << std::endl;
+                            tiles[i].dump(std::cout);
+                            tiles[j].dump(std::cout);
+                            bottom = true;
+                        }
+                        if (top && bottom && left && right)
+                            goto done_testing;
+            }
+done_testing:
+#endif
+
+        return tiles.size();
+    }
 }
 
