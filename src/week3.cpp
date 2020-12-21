@@ -726,6 +726,7 @@ namespace week3
 
             // rotate thrice - help from here https://www.codespeedy.com/rotate-a-matrix-in-cpp/
             // oddly, they appear to be rotating CCW, not CW, but it's fine
+            // do this up front so we're not doing it throughout the solution
             for (size_t r = 1; r <= 3; r++)
                 for (size_t i = 0; i < GRID/2; i++)
                     for (size_t j = i; j < GRID-i-1; j++)
@@ -736,6 +737,8 @@ namespace week3
                         m_grids[r][j][GRID-1-i]        = m_grids[r-1][i][j];
                     }
         }
+
+        long id() const { return m_id; }
 
         // for debugging
         void dump(std::ostream& os) const
@@ -797,12 +800,160 @@ namespace week3
         long m_id;
     };
 
+    class image
+    {
+    public:
+        typedef std::vector<tile> tileset_t;
+
+        image(const tileset_t& tileset) : m_tileset(tileset)
+        {
+            for (size_t x = 0; x < GRID; x++)
+                for (size_t y = 0; y < GRID; y++)
+                    m_inner[x][y] = EMPTY_CELL;
+        }
+
+        // dare to dream
+        long day20a() const
+        {
+            if (s_finals.size() == 0)
+                return -1; // womp
+
+            return s_finals.front().m_tileset[m_inner[0][0].first].id() *
+                   s_finals.front().m_tileset[m_inner[0][GRID-1].first].id() *
+                   s_finals.front().m_tileset[m_inner[GRID-1][0].first].id() *
+                   s_finals.front().m_tileset[m_inner[GRID-1][GRID-1].first].id();
+        }
+
+        void solve()
+        {
+            if (reject())
+                return;
+            if (accept())
+                s_finals.push_back(*this);
+            for (size_t x = 0; x < GRID; x++)
+            {
+                for (size_t y = 0; x < GRID; y++)
+                {
+                    if (m_inner[x][y] != EMPTY_CELL)
+                        continue;
+
+                    // x, y is the first empty cell
+                    image candidate(*this);
+                    // find a tile to try there
+                    for (size_t t = 0; t < m_tileset.size(); t++)
+                    {
+                        for (size_t r = 0; r < 4; r++)
+                        {
+                            // encapsulation fail
+                            candidate.m_inner[x][y].first = t;
+                            candidate.m_inner[x][y].second = r;
+                            if (candidate.reject())
+                                continue;
+                            else
+                                candidate.solve();
+                        }
+                    }
+                    // backtrack - set the cell we were working on to empty and head back up
+                    candidate.m_inner[x][y] = EMPTY_CELL;
+                    return;
+                }
+            }
+        }
+
+    private:
+        // return true if this partial candidate isn't worth considering further
+        bool reject() const
+        {
+            // first make sure we're not using a tile twice
+            std::set<size_t> used;
+            for (size_t x = 0; x < GRID; x++)
+            {
+                for (size_t y = 0; y < GRID; y++)
+                {
+                    if (m_inner[x][y] == EMPTY_CELL)
+                        continue;
+                    if (used.count(m_inner[x][y].first))
+                        return true;
+                    else
+                        used.insert(m_inner[x][y].first);
+                }
+            }
+
+            // for every non-empty cell, check all his non-empty neighbors for a match
+            for (size_t x = 0; x < GRID; x++)
+            {
+                for (size_t y = 0; y < GRID; y++)
+                {
+                    if (m_inner[x][y] == EMPTY_CELL)
+                        continue;
+
+                    const tile& curr_tile = m_tileset[m_inner[x][y].first];
+                    const size_t curr_rot = m_inner[x][y].second;
+
+                    if (x > 0 && m_inner[x-1][y] != EMPTY_CELL && !curr_tile.match_left(curr_rot, m_tileset[m_inner[x-1][y].first], m_inner[x-1][y].second))
+                        return true;
+                    if (y > 0 && m_inner[x][y-1] != EMPTY_CELL && !curr_tile.match_top(curr_rot, m_tileset[m_inner[x][y-1].first], m_inner[x][y-1].second))
+                        return true;
+                    if (x < GRID-1 && m_inner[x+1][y] != EMPTY_CELL && !curr_tile.match_right(curr_rot, m_tileset[m_inner[x+1][y].first], m_inner[x+1][y].second))
+                        return true;
+                    if (y < GRID-1 && m_inner[x][y+1] != EMPTY_CELL && !curr_tile.match_bottom(curr_rot, m_tileset[m_inner[x][y+1].first], m_inner[x][y+1].second))
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        // is this solution totally valid? return true if so
+        bool accept() const
+        {
+            // if any cell is still empty, I'm no good
+            for (size_t x = 0; x < GRID; x++)
+                for (size_t y = 0; y < GRID; y++)
+                    if (m_inner[x][y] == EMPTY_CELL)
+                        return false;
+
+            for (size_t x = 0; x < GRID; x++)
+            {
+                for (size_t y = 0; y < GRID; y++)
+                {
+                    const tile& curr_tile = m_tileset[m_inner[x][y].first];
+                    const size_t curr_rot = m_inner[x][y].second;
+
+                    if (x > 0 && !curr_tile.match_left(curr_rot, m_tileset[m_inner[x-1][y].first], m_inner[x-1][y].second))
+                        return false;
+                    if (y > 0 && !curr_tile.match_top(curr_rot, m_tileset[m_inner[x][y-1].first], m_inner[x][y-1].second))
+                        return false;
+                    if (x < GRID-1 && !curr_tile.match_right(curr_rot, m_tileset[m_inner[x+1][y].first], m_inner[x+1][y].second))
+                        return false;
+                    if (y < GRID-1 && !curr_tile.match_bottom(curr_rot, m_tileset[m_inner[x][y+1].first], m_inner[x][y+1].second))
+                        return false;
+                }
+            }
+            return true;
+        }
+
+        // each cell in the final grid
+        // -- first is the index of the tile in the vector of them that we read in
+        // -- second is the rotation [0, 3]
+        typedef std::pair<size_t, size_t> cell_t;
+        static constexpr cell_t EMPTY_CELL = { std::numeric_limits<size_t>::max(), std::numeric_limits<size_t>::max() };
+
+        // cheat alert! looked at the data, and there are 144 tiles, so assuming 12x12 solution for now
+        static const size_t GRID = 12;
+        typedef std::array<std::array<cell_t, GRID>, GRID> inner_t;
+        inner_t m_inner;
+
+        const tileset_t& m_tileset;
+
+        static std::vector<image> s_finals;
+    };
+
     long day20a()
     {
         std::ifstream infile("../data/day20.dat");
         std::string line;
 
-        std::vector<tile> tiles;
+        image::tileset_t tiles;
 
         while (true)
         {
@@ -857,12 +1008,16 @@ namespace week3
                             bottom = true;
                         }
                         if (top && bottom && left && right)
-                            goto done_testing;
+                            goto done;
             }
-done_testing:
+done:
 #endif
 
-        return tiles.size();
+        image solution(tiles);
+        solution.solve();
+        return solution.day20a();
     }
 }
+
+std::vector<week3::image> week3::image::s_finals;
 
