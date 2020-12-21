@@ -712,10 +712,13 @@ namespace week3
         // size of each individual tile is 10x10
         static constexpr size_t GRID = 10;
 
+        // late breaking news! the tiles can be flipped, not just rotated.
+        static constexpr size_t PERMUTATIONS = 4 * 2 * 2;
+
         // pass it a vector of MAX+1 strings - first is Tile: nnnnn, rest are lines as read in input
         tile(const std::vector<std::string>& lines) : m_id(std::stol(lines[0].substr(5, lines[0].find(':') - 5)))
         {
-            // set the first grid, then rotate it 3 times
+            // set the first grid at permutation 0
             for (size_t y = 1; y < lines.size(); y++)
             {
                 for (size_t x = 0; x < lines[y].size(); x++)
@@ -724,7 +727,7 @@ namespace week3
                 }
             }
 
-            // rotate thrice - help from here https://www.codespeedy.com/rotate-a-matrix-in-cpp/
+            // rotate thrice for permutations 1 thru 3 - help from here https://www.codespeedy.com/rotate-a-matrix-in-cpp/
             // oddly, they appear to be rotating CCW, not CW, but it's fine
             // do this up front so we're not doing it throughout the solution
             for (size_t r = 1; r <= 3; r++)
@@ -736,6 +739,24 @@ namespace week3
                         m_grids[r][GRID-1-i][GRID-1-j] = m_grids[r-1][j][GRID-1-i];
                         m_grids[r][j][GRID-1-i]        = m_grids[r-1][i][j];
                     }
+
+            // next 4 permutations are horizontal flips of the first 4
+            for (size_t r = 4; r < 8; r++)
+                for (size_t i = 0; i < GRID; i++)
+                    for (size_t j = 0; j < GRID; j++)
+                        m_grids[r][i][j] =             m_grids[r-4][GRID-1-i][j];
+
+            // next 4 permutations are vertical flips of the first 4
+            for (size_t r = 8; r < 12; r++)
+                for (size_t i = 0; i < GRID; i++)
+                    for (size_t j = 0; j < GRID; j++)
+                        m_grids[r][i][j] =             m_grids[r-8][i][GRID-1-j];
+
+            // last 4 permutations are vertical flips of the horizontal flips
+            for (size_t r = 12; r < PERMUTATIONS; r++)
+                for (size_t i = 0; i < GRID; i++)
+                    for (size_t j = 0; j < GRID; j++)
+                        m_grids[r][i][j] =             m_grids[r-8][i][GRID-1-j];
         }
 
         long id() const { return m_id; }
@@ -746,7 +767,7 @@ namespace week3
             os << m_id << std::endl;
             for (size_t y = 0; y < GRID; y++)
             {
-                for (size_t r = 0; r < 4; r++)
+                for (size_t r = 0; r < PERMUTATIONS; r++)
                 {
                     for (size_t x = 0; x < GRID; x++)
                     {
@@ -795,8 +816,7 @@ namespace week3
         }
 
     private:
-        // first index 0-3 is for the rotations
-        std::array<std::array<std::array<char, GRID>, GRID>, 4> m_grids;
+        std::array<std::array<std::array<char, GRID>, GRID>, PERMUTATIONS> m_grids;
         long m_id;
     };
 
@@ -850,7 +870,7 @@ namespace week3
                     // x,y is the first empty cell, so find a tile/rotation to try there
                     for (size_t t = 0; t < m_tileset.size(); t++)
                     {
-                        for (size_t r = 0; r < 4; r++)
+                        for (size_t r = 0; r < tile::PERMUTATIONS; r++)
                         {
                             // encapsulation fail
                             candidate.m_inner[x][y].first = t;
@@ -990,13 +1010,14 @@ namespace week3
 
 #if 0
         // a big chunk of test code just to make sure the functions in the tile class do the right thing
+
         // make sure the match_ functions find something and print the results for visual inspection
         bool top = false, bottom = false, left = false, right = false;
 
         for (size_t i = 0; i < tiles.size(); i++)
             for (size_t j = i + 1; j < tiles.size(); j++)
-                for (size_t r = 0; r < 4; r++)
-                    for (size_t s = 0; s < 4; s++)
+                for (size_t r = 0; r < tile::PERMUTATIONS; r++)
+                    for (size_t s = 0; s < tile::PERMUTATIONS; s++)
                     {
                         if (!right && tiles[i].match_right(r, tiles[j], s))
                         {
@@ -1030,11 +1051,12 @@ namespace week3
                             goto done;
             }
 done:
-#endif
-
+        return -1;
+#else
         image solution(tiles);
         solution.solve();
         return solution.day20a();
+#endif
     }
 }
 
