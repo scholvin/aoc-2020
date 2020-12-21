@@ -1050,6 +1050,12 @@ namespace week3
 
     long day20a()
     {
+        return -1;
+    }
+
+    // broke as fuck
+    long day20axxxx()
+    {
         std::ifstream infile("../data/day20.dat");
         std::string line;
 
@@ -1120,6 +1126,103 @@ done:
         solution.solve();
         return solution.day20a();
 #endif
+    }
+
+    long day21a()
+    {
+        std::ifstream infile("../data/day21.dat");
+        std::string line;
+
+        typedef std::set<std::string> set_t;
+
+        // for each allergen, maintain sets of possible ingredients as we encounter new ingredients, run the intersection
+        std::map<std::string, set_t> processing;
+        std::multiset<std::string> all_ingredients; // multiset because we are counting dups
+
+        while (std::getline(infile, line))
+        {
+            // start by creating a set of ingredients for this line
+            set_t ingredients;
+            std::size_t paren = line.find('(');
+            std::string front = line.substr(0, paren-1);
+            std::size_t nspace = line.find(' ', paren);
+            std::string back = line.substr(nspace+1);
+            boost::split(ingredients, front, boost::is_any_of(" "));
+            // store each ingredient in the master ingredients list
+            for (auto ing: ingredients)
+                all_ingredients.insert(ing);
+
+            boost::tokenizer<> tok(back);
+            // for each allergen in the second part of the line
+            for (auto allergen = tok.begin(); allergen != tok.end(); ++allergen)
+            {
+                auto proc = processing.find(*allergen);
+                if (proc == processing.end())
+                {
+                    // if this is a new allergen, just put the ingredients in the map
+                    processing[*allergen] = ingredients;
+                }
+                else
+                {
+                    // this allergen is in the map, so we calculate the intersection of all ingredients previously there
+                    set_t inter;
+                    std::set_intersection(proc->second.begin(), proc->second.end(), ingredients.begin(), ingredients.end(), std::inserter(inter, inter.begin()));
+                    proc->second = inter;
+                }
+            }
+        }
+
+        // now we prune the processing list
+        //  find all allegens where ingredients.count() == 1,
+        //  remove that ingredient from all other allergens
+        //  iterate until everybody has count() == 1
+
+        bool done = false;
+        while (!done)
+        {
+            done = true;
+            for (auto& it1: processing)
+            {
+                if (it1.second.size() == 1)
+                {
+                    // erase *it1.second.begin() from all second halves except this one
+                    for (auto& it2: processing)
+                    {
+                        if (it1 == it2)
+                            continue;
+                        if (it2.second.erase(*it1.second.begin()) > 0)
+                            // if we removed one, keep going
+                            done = false;
+                    }
+                }
+            }
+        }
+
+        std::string partb;
+        for (auto it = processing.begin(); it != processing.end(); ++it)
+        {
+            if (it == processing.begin())
+                partb += *it->second.begin();
+            else
+                partb += "," + *it->second.begin();
+        }
+        std::cout << partb;
+
+        // for convenience, create a working set of the known allergen-containing ingredients
+        set_t containing;
+        for (auto it: processing)
+            containing.insert(*it.second.begin());
+
+        long sum = 0;
+        for (auto it = all_ingredients.begin(); it != all_ingredients.end(); )
+        {
+            size_t count = all_ingredients.count(*it);
+            if (containing.count(*it) == 0)
+                sum += count;
+            std::advance(it, count);
+        }
+
+        return sum;
     }
 }
 
