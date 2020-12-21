@@ -84,9 +84,13 @@ bool runner::new_order::operator()(const string& left, const string& right) cons
 
     // idea is to make 10a come after 9b - this is serious overkill
     auto lindex = left.find_first_not_of("0123456789");
+    if (lindex == std::string::npos)
+        return left < right;
     int lnum = stoi(left.substr(0, lindex));
     string lstr = left.substr(lindex);
     auto rindex = right.find_first_not_of("0123456789");
+    if (rindex == std::string::npos)
+        return left < right;
     int rnum = stoi(right.substr(0, rindex));
     string rstr = right.substr(rindex);
 
