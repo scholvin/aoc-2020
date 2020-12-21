@@ -708,6 +708,8 @@ namespace week3
     class tile
     {
     public:
+        friend class image; // TODO all we really need to friend is dump_full
+
         // cheat alert - looked at the data
         // size of each individual tile is 10x10
         static constexpr size_t GRID = 10;
@@ -850,14 +852,17 @@ namespace week3
             s_depth++;
             if (accept())
             {
+                std::cout << "ACCEPTING" << std::endl;
+                dump(std::cout);
+                dump_full(std::cout);
                 s_finals.push_back(*this);
                 s_depth--;
                 return;
             }
 
-            for (size_t x = 0; x < GRID; x++)
+            for (size_t y = 0; y < GRID; y++)
             {
-                for (size_t y = 0; x < GRID; y++)
+                for (size_t x = 0; x < GRID; x++)
                 {
                     if (m_inner[x][y] != EMPTY_CELL)
                     {
@@ -883,7 +888,8 @@ namespace week3
                             else
                             {
                                 // this is worth trying
-                                std::cout << "recursing: d,x,y,t,r=" << s_depth << "," << x << "," << y << "," << t << "," << r << std::endl;
+                                std::cout << "candidate at d,x,y,t,r=" << s_depth << "," << x << "," << y << "," << t << "," << r << std::endl;
+                                candidate.dump(std::cout);
                                 candidate.solve();
                             }
                         }
@@ -895,6 +901,39 @@ namespace week3
                 }
             }
             throw std::logic_error("shouldn't get here");
+        }
+
+        void dump(std::ostream& os) const
+        {
+            for (size_t y = 0; y < GRID; y++)
+            {
+                for (size_t x = 0; x < GRID; x++)
+                {
+                    os << m_inner[x][y].first << "." << m_inner[x][y].second << " ";
+                }
+                os << std::endl;
+            }
+        }
+
+        void dump_full(std::ostream& os) const
+        {
+            // x,y = the tile
+            for (size_t y = 0; y < GRID; y++) // big rows
+            {
+                for (size_t z = 0; z < tile::GRID; z++) // little rows
+                {
+                    for (size_t x = 0; x < GRID; x++) // big columns
+                    {
+                        for (size_t c = 0; c < tile::GRID; c++) // little columns
+                        {
+                            os << m_tileset[m_inner[x][y].first].m_grids[m_inner[x][y].second][c][z];
+                        }
+                        os << " ";
+                    }
+                    os << std::endl;
+                }
+                os << std::endl;
+            }
         }
 
     private:
@@ -973,7 +1012,7 @@ namespace week3
         // -- first is the index of the tile in the vector of them that we read in
         // -- second is the rotation [0, 3]
         typedef std::pair<size_t, size_t> cell_t;
-        static constexpr cell_t EMPTY_CELL = { std::numeric_limits<size_t>::max(), std::numeric_limits<size_t>::max() };
+        static constexpr cell_t EMPTY_CELL = { 666, 666 };
 
         // cheat alert! looked at the data, and there are 144 tiles, so assuming 12x12 solution for now
         static const size_t GRID = 3;
@@ -1010,6 +1049,8 @@ namespace week3
 
 #if 0
         // a big chunk of test code just to make sure the functions in the tile class do the right thing
+
+        std::cout << "sizeof(tile)=" << sizeof(tile) << " sizeof(image)=" << sizeof(image) << std::endl;
 
         // make sure the match_ functions find something and print the results for visual inspection
         bool top = false, bottom = false, left = false, right = false;
