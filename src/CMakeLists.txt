@@ -14,4 +14,4 @@ BISON_TARGET(Day19b day19b.y ${CMAKE_CURRENT_BINARY_DIR}/day19b.cpp COMPILE_FLAG
 
 add_compile_options(-std=c++2a -ggdb -Wall)  # -Og makes it faster, but hard to debug
 
-add_executable(aoc-2020 main.cpp runner.cpp week1.cpp week2.cpp week3.cpp week4.cpp ${BISON_Day19a_OUTPUTS} ${BISON_Day19b_OUTPUTS})
+add_executable(aoc-2020 main.cpp runner.cpp week1.cpp week2.cpp week3.cpp day20.cpp week4.cpp ${BISON_Day19a_OUTPUTS} ${BISON_Day19b_OUTPUTS})
