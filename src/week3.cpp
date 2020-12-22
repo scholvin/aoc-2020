@@ -1266,7 +1266,7 @@ done:
                 partb += "," + *it->second.begin();
         }
         // part b
-        std::cout << "21b: " << partb << std::endl;
+        std::cout << "    21b answer: " << partb << std::endl;
 
         // part a
         return sum;
