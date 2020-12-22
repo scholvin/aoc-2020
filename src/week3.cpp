@@ -706,8 +706,8 @@ namespace week3
     }
 
     /*
-        Day 20. This turned out to be a lot of code. Even if you throw away the debugging stuff and the comments,
-        it's still a lot. But it works and is fast enough. Proably a lot of room to improve in the backtracker.
+        Day 20. This turned out to be a lot of code, something like 400 lines for part a.
+        But it works and is fast enough. Proably a lot of room to improve in the backtracker.
 
         There are two implementaion classes:
 
@@ -837,8 +837,14 @@ namespace week3
 
     class image
     {
+        // cheat alert! looked at the data, and there are 144 tiles, so assuming 12x12 solution for now
+        static const size_t GRID = 12;
+
     public:
         typedef std::vector<tile> tileset_t;
+
+        static const size_t SEA_GRID = GRID * (tile::GRID - 2);
+        typedef std::array<std::array<char, SEA_GRID>, SEA_GRID> sea_t;
 
         image(const tileset_t& tileset) : m_tileset(tileset)
         {
@@ -848,7 +854,7 @@ namespace week3
         }
 
         // dare to dream
-        long day20a() const
+        long result() const
         {
             if (s_finals.size() == 0)
                 return -1; // womp
@@ -958,6 +964,26 @@ namespace week3
             }
         }
 
+        void make_sea(sea_t& sea) const
+        {
+            // strip off borders of internal tiles
+            size_t row = 0;
+            for (size_t y = 0; y < GRID; y++) // big rows
+            {
+                for (size_t z = 1; z < tile::GRID - 1; z++) // little rows
+                {
+                    size_t col = 0;
+                    for (size_t x = 0; x < GRID; x++) // big columns
+                    {
+                        for (size_t c = 1; c < tile::GRID - 1; c++) // little columns
+                        {
+                            // TODO build the small grid
+                        }
+                    }
+                }
+            }
+        }
+
     private:
         // return true if this partial candidate isn't worth considering further
         bool reject() const
@@ -1036,8 +1062,6 @@ namespace week3
         typedef std::pair<size_t, size_t> cell_t;
         static constexpr cell_t EMPTY_CELL = { 666, 666 };
 
-        // cheat alert! looked at the data, and there are 144 tiles, so assuming 12x12 solution for now
-        static const size_t GRID = 12;
         typedef std::array<std::array<cell_t, GRID>, GRID> inner_t;
         inner_t m_inner;
 
@@ -1048,12 +1072,10 @@ namespace week3
         static int s_iterations;
     };
 
-    long day20a()
+    void load_tiles(image::tileset_t& tiles)
     {
         std::ifstream infile("../data/day20.dat");
         std::string line;
-
-        image::tileset_t tiles;
 
         while (true)
         {
@@ -1115,12 +1137,31 @@ namespace week3
                             goto done;
             }
 done:
-        return -1;
-#else
+#endif
+    }
+
+    long day20a()
+    {
+        image::tileset_t tiles;
+        load_tiles(tiles);
+
         image solution(tiles);
         solution.solve();
-        return solution.day20a();
-#endif
+        return solution.result();
+    }
+
+    long day20b()
+    {
+        image::tileset_t tiles;
+        load_tiles(tiles);
+
+        image intermediate(tiles);
+        intermediate.solve();
+
+        image::sea_t sea;
+        intermediate.make_sea(sea);
+
+        return -1;
     }
 
     long day21()
