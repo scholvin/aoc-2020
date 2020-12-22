@@ -838,7 +838,7 @@ namespace week3
     class image
     {
         // cheat alert! looked at the data, and there are 144 tiles, so assuming 12x12 solution for now
-        static const size_t GRID = 12;
+        static const size_t GRID = 3;
 
     public:
         typedef std::vector<tile> tileset_t;
@@ -966,18 +966,25 @@ namespace week3
 
         void make_sea(sea_t& sea) const
         {
-            // strip off borders of internal tiles
-            size_t row = 0;
-            for (size_t y = 0; y < GRID; y++) // big rows
+            // strip off borders of internal tiles and make into one big image
+            for (size_t tx = 0; tx < GRID; tx++) // tile x
             {
-                for (size_t z = 1; z < tile::GRID - 1; z++) // little rows
+                for (size_t ty = 0; ty < GRID; ty++) // tile y
                 {
-                    size_t col = 0;
-                    for (size_t x = 0; x < GRID; x++) // big columns
+                    for (size_t gx = 1; gx < tile::GRID - 1; gx++) // grid x, with borders stripped off
                     {
-                        for (size_t c = 1; c < tile::GRID - 1; c++) // little columns
+                        for (size_t gy = 1; gy < tile::GRID - 1; gy++) // grid y, with borders stripped off
                         {
-                            // TODO build the small grid
+                            // char to place - overly pedantic code to make it visbly workable
+                            auto index = s_finals.front().m_inner[tx][ty].first;
+                            auto perm = s_finals.front().m_inner[tx][ty].second;
+                            char c = m_tileset[index].m_grids[perm][gx][gy];
+
+                            // convert to sea coordinates
+                            size_t sea_x = tx * GRID + gx - 1;
+                            size_t sea_y = ty * GRID + gy - 1;
+
+                            sea[sea_x][sea_y] = c;
                         }
                     }
                 }
@@ -1160,6 +1167,15 @@ done:
 
         image::sea_t sea;
         intermediate.make_sea(sea);
+
+        for (size_t y = 0; y < image::SEA_GRID; y++)
+        {
+            for (size_t x = 0; x < image::SEA_GRID; x++)
+            {
+                std::cout << sea[x][y];
+            }
+            std::cout << std::endl;
+        }
 
         return -1;
     }
