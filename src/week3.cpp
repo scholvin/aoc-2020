@@ -195,7 +195,7 @@ namespace week3
         while (true)
         {
             size_t s = 0;
-            while (solutions[s].size() != 1 && s < POSITIONS)
+            while (s < POSITIONS && solutions[s].size() != 1)
                 s++;
             if (s == POSITIONS)
                 break;
