@@ -705,6 +705,30 @@ namespace week3
         return valid;
     }
 
+    /*
+        Day 20. This turned out to be a lot of code. Even if you throw away the debugging stuff and the comments,
+        it's still a lot. But it works and is fast enough. Proably a lot of room to improve in the backtracker.
+
+        There are two implementaion classes:
+
+            image - the final composite image, made up of an NxN grid of tiles.
+            tile - represents an individual tile on the larger assembled image.
+
+        The image class has methods to perform the recusrive backtrack, the entry point of which is solve(). See
+        the comments in the class, but this is fairly typical backtracking. The main data structure here is the NxN
+        array of tiles, with each cell represented by inedexes into a vector containing a master set of all the tiles,
+        and that tile's permutation (flip/rotation) in the cell.
+
+        The tile class uses a couple of tricks to help with performance (hopefully):
+
+            - at construction, it builds the rotated and flipped copies of itself to aid in matching and,
+              it turns out, these will be really useful later for assembling the final image for part b
+            - a series of match functions to determine whether a given neighbor, in the given permutation,
+              matches the tile on the specified side.
+
+        Both classes support printing debug output to a std::ostream.
+    */
+
     class tile
     {
     public:
@@ -715,7 +739,8 @@ namespace week3
         static constexpr size_t GRID = 10;
 
         // late breaking news! the tiles can be flipped, not just rotated.
-        static constexpr size_t PERMUTATIONS = 4 * 2 * 2;
+        // later breaking news: there are only 8 possible permutations
+        static constexpr size_t PERMUTATIONS = 8;
 
         // pass it a vector of MAX+1 strings - first is Tile: nnnnn, rest are lines as read in input
         tile(const std::vector<std::string>& lines) : m_id(std::stol(lines[0].substr(5, lines[0].find(':') - 5)))
@@ -747,18 +772,6 @@ namespace week3
                 for (size_t i = 0; i < GRID; i++)
                     for (size_t j = 0; j < GRID; j++)
                         m_grids[r][i][j] =             m_grids[r-4][GRID-1-i][j];
-
-            // next 4 permutations are vertical flips of the first 4
-            for (size_t r = 8; r < 12; r++)
-                for (size_t i = 0; i < GRID; i++)
-                    for (size_t j = 0; j < GRID; j++)
-                        m_grids[r][i][j] =             m_grids[r-8][i][GRID-1-j];
-
-            // last 4 permutations are vertical flips of the horizontal flips
-            for (size_t r = 12; r < PERMUTATIONS; r++)
-                for (size_t i = 0; i < GRID; i++)
-                    for (size_t j = 0; j < GRID; j++)
-                        m_grids[r][i][j] =             m_grids[r-8][i][GRID-1-j];
         }
 
         long id() const { return m_id; }
@@ -851,6 +864,7 @@ namespace week3
         void solve()
         {
             // there are many solutions - for now, we only care about the first one
+            // lots of stack unwinding to do here maybe
             if (s_finals.size())
             {
                 s_depth--;
@@ -859,17 +873,11 @@ namespace week3
 
             s_iterations++;
             s_depth++;
-            if (s_iterations % 100 == 0)
-            {
-                std::cout << "it=" << s_iterations << " d=" << s_depth << std::endl;
-                dump(std::cout);
-            }
 
             if (accept())
             {
-                std::cout << "ACCEPTING" << std::endl;
-                dump(std::cout);
-                //dump_full(std::cout);
+                // std::cout << "ACCEPTING at iteration=" << s_iterations << " stack depth=" << s_depth<< std::endl;
+                // dump(std::cout);
                 s_finals.push_back(*this);
                 s_depth--;
                 return;
@@ -903,17 +911,9 @@ namespace week3
                             else
                             {
                                 // this is worth trying
-                                std::cout << "candidate at d,x,y,t,r=" << s_depth << "," << x << "," << y << "," << t << "," << r << std::endl;
-                                //candidate.dump(std::cout);
                                 candidate.solve();
                             }
                         }
-                    }
-
-                    if (s_depth == 49 && x == 0 && y == 4)
-                    {
-                         std::cout << "no alternatives at d,x,y=" << s_depth << "," << x << "," << y << std::endl;
-                         candidate.dump(std::cout);
                     }
 
                     // backtrack - set the cell we were working on to empty and head back up
@@ -1050,12 +1050,6 @@ namespace week3
 
     long day20a()
     {
-        return -1;
-    }
-
-    // broke as fuck
-    long day20axxxx()
-    {
         std::ifstream infile("../data/day20.dat");
         std::string line;
 
@@ -1076,9 +1070,10 @@ namespace week3
         }
 
 #if 0
-        // a big chunk of test code just to make sure the functions in the tile class do the right thing
-
+        // a big chunk of "test" code just to make sure the functions in the tile class do the right thing
         std::cout << "sizeof(tile)=" << sizeof(tile) << " sizeof(image)=" << sizeof(image) << std::endl;
+
+        tiles[0].dump(std::cout);
 
         // make sure the match_ functions find something and print the results for visual inspection
         bool top = false, bottom = false, left = false, right = false;
@@ -1181,7 +1176,6 @@ done:
         //   find all allegens where ingredients.count() == 1,
         //   remove that ingredient from all other allergens' ingredient sets
         //   iterate until all ingredient sets have count() == 1
-
         bool done = false;
         while (!done)
         {
@@ -1204,7 +1198,6 @@ done:
         }
 
         // at this point, the processing map should map 1 allergen to a set containing exactly 1 ingredient
-
         // for convenience, create a working set of the known allergen-containing ingredients
         set_t containing;
         for (auto it: processing)
