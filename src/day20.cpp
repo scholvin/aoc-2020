@@ -2,17 +2,9 @@
 
 #include <fstream>
 #include <iostream>
-#include <unordered_map>
-#include <regex>
-#include <algorithm>
-#include <set>
 #include <unordered_set>
-#include <stack>
-
-#include <boost/lexical_cast.hpp>
-#include <boost/tokenizer.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/container_hash/hash.hpp>
+#include <cassert>
+#include <cstring>
 
 namespace day20
 {
@@ -162,21 +154,97 @@ namespace day20
             for (size_t x = 0; x < GRID; x++)
                 for (size_t y = 0; y < GRID; y++)
                     m_inner[x][y] = EMPTY_CELL;
+
+            solve();
+
+            // solve only works on candidate objects, so tihs one's own state never gets updated
+            // after the work is done. this is a kludge
+            if (s_finals.size())
+                m_inner = s_finals.front().m_inner;
+            else
+                throw std::runtime_error("no solution found");
         }
 
         // dare to dream
         long result() const
         {
-            if (s_finals.size() == 0)
-                return -1; // womp
-
-            const auto& f = s_finals.front();
-
-            return f.m_tileset[f.m_inner[0][0].first].id() *
-                   f.m_tileset[f.m_inner[0][GRID-1].first].id() *
-                   f.m_tileset[f.m_inner[GRID-1][0].first].id() *
-                   f.m_tileset[f.m_inner[GRID-1][GRID-1].first].id();
+            return m_tileset[m_inner[0][0].first].id() *
+                   m_tileset[m_inner[0][GRID-1].first].id() *
+                   m_tileset[m_inner[GRID-1][0].first].id() *
+                   m_tileset[m_inner[GRID-1][GRID-1].first].id();
         }
+
+        void dump(std::ostream& os) const
+        {
+            for (size_t y = 0; y < GRID; y++)
+            {
+                for (size_t x = 0; x < GRID; x++)
+                {
+                    os << m_inner[x][y].first << "." << m_inner[x][y].second << " ";
+                }
+                os << std::endl;
+            }
+        }
+
+        void dump_full(std::ostream& os) const
+        {
+            // x,y = the tile
+            for (size_t y = 0; y < GRID; y++) // big rows
+            {
+                for (size_t z = 0; z < tile::GRID; z++) // little rows
+                {
+                    for (size_t x = 0; x < GRID; x++) // big columns
+                    {
+                        for (size_t c = 0; c < tile::GRID; c++) // little columns
+                        {
+                            os << m_tileset[m_inner[x][y].first].m_grids[m_inner[x][y].second][c][z];
+                        }
+                        os << " ";
+                    }
+                    os << std::endl;
+                }
+                os << std::endl;
+            }
+
+            // also print the reference id's
+            for (size_t y = 0; y < GRID; y++)
+            {
+                for (size_t x = 0; x < GRID; x++)
+                {
+                    os << m_tileset[m_inner[x][y].first].m_id << " ";
+                }
+                os << std::endl;
+            }
+        }
+
+        void make_sea(sea_t& sea) const
+        {
+            // strip off borders of internal tiles and make into one big image
+            for (size_t tx = 0; tx < GRID; tx++) // tile x
+            {
+                for (size_t ty = 0; ty < GRID; ty++) // tile y
+                {
+                    for (size_t gx = 1; gx < tile::GRID - 1; gx++) // grid x, with borders stripped off
+                    {
+                        for (size_t gy = 1; gy < tile::GRID - 1; gy++) // grid y, with borders stripped off
+                        {
+                            // char to place - overly pedantic code to make it visbly workable
+                            auto index = m_inner[tx][ty].first;
+                            auto perm = m_inner[tx][ty].second;
+                            char c = m_tileset[index].m_grids[perm][gx][gy];
+
+                            // convert to sea coordinates
+                            size_t sea_x = tx * (tile::GRID - 2) + gx - 1;
+                            size_t sea_y = ty * (tile::GRID - 2) + gy - 1;
+                            assert (sea_x < SEA_GRID && sea_y < SEA_GRID);
+                            sea[sea_x][sea_y] = c;
+                        }
+                    }
+                }
+            }
+        }
+
+    private:
 
         void solve()
         {
@@ -242,67 +310,6 @@ namespace day20
             throw std::logic_error("shouldn't get here");
         }
 
-        void dump(std::ostream& os) const
-        {
-            for (size_t y = 0; y < GRID; y++)
-            {
-                for (size_t x = 0; x < GRID; x++)
-                {
-                    os << m_inner[x][y].first << "." << m_inner[x][y].second << " ";
-                }
-                os << std::endl;
-            }
-        }
-
-        void dump_full(std::ostream& os) const
-        {
-            // x,y = the tile
-            for (size_t y = 0; y < GRID; y++) // big rows
-            {
-                for (size_t z = 0; z < tile::GRID; z++) // little rows
-                {
-                    for (size_t x = 0; x < GRID; x++) // big columns
-                    {
-                        for (size_t c = 0; c < tile::GRID; c++) // little columns
-                        {
-                            os << m_tileset[m_inner[x][y].first].m_grids[m_inner[x][y].second][c][z];
-                        }
-                        os << " ";
-                    }
-                    os << std::endl;
-                }
-                os << std::endl;
-            }
-        }
-
-        void make_sea(sea_t& sea) const
-        {
-            // strip off borders of internal tiles and make into one big image
-            for (size_t tx = 0; tx < GRID; tx++) // tile x
-            {
-                for (size_t ty = 0; ty < GRID; ty++) // tile y
-                {
-                    for (size_t gx = 1; gx < tile::GRID - 1; gx++) // grid x, with borders stripped off
-                    {
-                        for (size_t gy = 1; gy < tile::GRID - 1; gy++) // grid y, with borders stripped off
-                        {
-                            // char to place - overly pedantic code to make it visbly workable
-                            auto index = s_finals.front().m_inner[tx][ty].first;
-                            auto perm = s_finals.front().m_inner[tx][ty].second;
-                            char c = m_tileset[index].m_grids[perm][gx][gy];
-
-                            // convert to sea coordinates
-                            size_t sea_x = tx * GRID + gx - 1;
-                            size_t sea_y = ty * GRID + gy - 1;
-
-                            sea[sea_x][sea_y] = c;
-                        }
-                    }
-                }
-            }
-        }
-
-    private:
         // return true if this partial candidate isn't worth considering further
         bool reject() const
         {
@@ -464,7 +471,6 @@ done:
         load_tiles(tiles);
 
         image solution(tiles);
-        solution.solve();
         return solution.result();
     }
 
@@ -474,9 +480,11 @@ done:
         load_tiles(tiles);
 
         image intermediate(tiles);
-        intermediate.solve();
+
+        intermediate.dump_full(std::cout);
 
         image::sea_t sea;
+        memset(&sea, '*', sizeof(sea));
         intermediate.make_sea(sea);
 
         for (size_t y = 0; y < image::SEA_GRID; y++)
