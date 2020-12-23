@@ -9,6 +9,15 @@
 namespace day20
 {
     /*
+
+            All men live enveloped in whale-lines. All are born with halters round their necks; but it is
+            only when caught in the swift, sudden turn of death, that mortals realize the silent, subtle,
+            ever-present perils of life. And if you be a philosopher, though seated in the whale-boat, you
+            would not at heart feel one whit more of terror, than though seated before your evening fire
+            with a poker, and not a harpoon, by your side.
+
+        Herman Melville, _Moby-Dick; or, The Whale_
+
         Day 20. This turned out to be a lot of code, something like 400 lines for part a.
         But it works and is fast enough. Proably a lot of room to improve in the backtracker.
 
@@ -141,7 +150,7 @@ namespace day20
     class image
     {
         // cheat alert! looked at the data, and there are 144 tiles, so assuming 12x12 solution for now
-        static const size_t GRID = 3;
+        static const size_t GRID = 12;
 
     public:
         typedef std::vector<tile> tileset_t;
@@ -217,6 +226,7 @@ namespace day20
             }
         }
 
+        // generate a composite of the tiles, but delete the border layer in each
         void make_sea(sea_t& sea) const
         {
             // strip off borders of internal tiles and make into one big image
@@ -481,7 +491,32 @@ done:
 
         image intermediate(tiles);
 
-        intermediate.dump_full(std::cout);
+        const std::vector<std::string> SEA_MONSTER =
+        {
+            "                  # ",
+            "#    ##    ##    ###",
+            " #  #  #  #  #  #   "
+        };
+
+        // cheat alert
+        const size_t MON_X = 20;
+        const size_t MON_Y = 3;
+        typedef std::array<std::array<char, MON_Y>, MON_X> monster_horz_t;
+        //typedef std::array<std::array<char, MON_X>, MON_Y> monster_vert_t;
+
+        // instead of flipping and rotating the sea, we flip and rotate the monster
+        std::array<monster_horz_t, 4> horz;
+
+        for (size_t x = 0; x < MON_X; x++)
+        {
+            for (size_t y = 0; y < MON_Y; y++)
+            {
+                horz[0][x][y] = SEA_MONSTER[y][x];               // base monster
+                horz[1][MON_X-x-1][y] = SEA_MONSTER[y][x];       // flipped horizontally
+                horz[2][x][MON_Y-y-1] = SEA_MONSTER[y][x];       // flipped vertically
+                horz[3][MON_X-x-1][MON_Y-1] = SEA_MONSTER[y][x]; // flipped both (aka rotated 180)
+            }
+        }
 
         image::sea_t sea;
         memset(&sea, '*', sizeof(sea));
@@ -494,6 +529,32 @@ done:
                 std::cout << sea[x][y];
             }
             std::cout << std::endl;
+        }
+
+        // find matches
+        for (size_t r = 0; r < 4; r++)
+        {
+           for (size_t x = 0; x < image::SEA_GRID - MON_X; x++)
+            {
+                for (size_t y = 0; y < image::SEA_GRID - MON_Y; y++)
+                {
+                    bool match = true;
+                    for (size_t i = x; i < x + MON_X; i++)
+                    {
+                        for (size_t j = y; j < y + MON_Y; j++)
+                        {
+                            if (horz[r][i-x][j-y] == '#' && sea[i][j] != '#')
+                            {
+                                match = false;
+                                goto no_bueno;
+                            }
+                        }
+                    }
+no_bueno:
+                    if (match)
+                        std::cout << "match at r,x,y " << r << "," << x << "," << y << std::endl;
+                }
+            }
         }
 
         return -1;
