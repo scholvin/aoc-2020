@@ -143,4 +143,67 @@ namespace week4
             sum += *it * mult++;
         return sum;
     }
+
+    long day23a()
+    {
+        typedef std::list<long> list_t;
+        list_t data = { 8, 5, 3, 1, 9, 2, 6, 4, 7 };
+        //list_t data = { 3,8,9,1,2,5,4,6,7}; // test
+
+        list_t::iterator current = data.begin();
+        for (auto move = 1; move <= 100; move++)
+        {
+            std::cout << "\nmove " << move << std::endl;
+            std::for_each(data.begin(), data.end(), [](long l)->void{ std::cout << l << " ";}); std::cout << std::endl;
+            std::cout << "curr " << *current << std::endl;
+            list_t::iterator cit = current;
+            list_t pickup;
+            cit++;
+            while (pickup.size() < 3)
+            {
+                if (cit == data.end())
+                    cit = data.begin();
+                pickup.push_back(*cit);
+                cit = data.erase(cit);
+            }
+            std::cout << "pick "; std::for_each(pickup.begin(), pickup.end(), [](long l)->void{ std::cout << l << " ";}); std::cout << std::endl;
+
+            // currrent should point at current cup; data should be the main list with 3 removed, pickup should hold the 3
+            long dest = *current;
+            do
+            {
+                dest--;
+                if (dest == 0)
+                    dest = 9;
+            }
+            while (dest < 1 || dest > 9 || std::find(pickup.begin(), pickup.end(), dest) != pickup.end());
+            std::cout << "dest " << dest << std::endl;
+
+            // now insert pickup after dest.
+            list_t::iterator place = std::find(data.begin(), data.end(), dest);
+            // splice inserts before the iterator
+            place++;
+            data.splice(place, pickup);
+
+            current++;
+            if (current == data.end())
+                current = data.begin();
+        }
+
+        // using the fact that each number is a single digit as a cheat
+        std::string answer;
+        list_t::iterator final = std::find(data.begin(), data.end(), 1);
+
+        auto it = final;
+        it++;
+        while (it != final)
+        {
+            answer += (*it + '0');
+            it++;
+            if (it == data.end())
+                it = data.begin();
+        }
+        std::cout << answer << std::endl;
+        return std::stol(answer);
+    }
 }
