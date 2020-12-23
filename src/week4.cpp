@@ -148,14 +148,10 @@ namespace week4
     {
         typedef std::list<long> list_t;
         list_t data = { 8, 5, 3, 1, 9, 2, 6, 4, 7 };
-        //list_t data = { 3,8,9,1,2,5,4,6,7}; // test
 
         list_t::iterator current = data.begin();
         for (auto move = 1; move <= 100; move++)
         {
-            std::cout << "\nmove " << move << std::endl;
-            std::for_each(data.begin(), data.end(), [](long l)->void{ std::cout << l << " ";}); std::cout << std::endl;
-            std::cout << "curr " << *current << std::endl;
             list_t::iterator cit = current;
             list_t pickup;
             cit++;
@@ -166,7 +162,6 @@ namespace week4
                 pickup.push_back(*cit);
                 cit = data.erase(cit);
             }
-            std::cout << "pick "; std::for_each(pickup.begin(), pickup.end(), [](long l)->void{ std::cout << l << " ";}); std::cout << std::endl;
 
             // currrent should point at current cup; data should be the main list with 3 removed, pickup should hold the 3
             long dest = *current;
@@ -177,7 +172,6 @@ namespace week4
                     dest = 9;
             }
             while (dest < 1 || dest > 9 || std::find(pickup.begin(), pickup.end(), dest) != pickup.end());
-            std::cout << "dest " << dest << std::endl;
 
             // now insert pickup after dest.
             list_t::iterator place = std::find(data.begin(), data.end(), dest);
@@ -206,4 +200,79 @@ namespace week4
         std::cout << answer << std::endl;
         return std::stol(answer);
     }
+
+    long day23b()
+    {
+        typedef std::list<long> list_t;
+        //list_t data = { 8, 5, 3, 1, 9, 2, 6, 4, 7 };
+        list_t data = { 3,8,9,1,2,5,4,6,7}; // test
+
+        const long MILLION = 1000000;
+
+        long next = 10;
+        while (next <= MILLION)
+            data.push_back(next++);
+
+        std::cout << "Start" << std::endl;
+
+        list_t::iterator current = data.begin();
+        for (auto move = 1; move <= 10; move++)
+        {
+
+            std::cout << "\nmove " << move << std::endl;
+            auto p = current;
+            for (auto x = 0; x < 25; x++)
+            {
+                std::cout << *p++ << " ";
+            }
+            std::cout << "\ncurr " << *current << std::endl;
+
+            list_t::iterator cit = current;
+            list_t pickup;
+            cit++;
+            while (pickup.size() < 3)
+            {
+                if (cit == data.end())
+                    cit = data.begin();
+                pickup.push_back(*cit);
+                cit = data.erase(cit);
+            }
+            std::cout << "pick "; std::for_each(pickup.begin(), pickup.end(), [](long l)->void{ std::cout << l << " ";}); std::cout << std::endl;
+
+            // currrent should point at current cup; data should be the main list with 3 removed, pickup should hold the 3
+            long dest = *current;
+            do
+            {
+                dest--;
+                if (dest == 0)
+                    dest = MILLION;
+            }
+            while (dest < 1 || dest > MILLION || std::find(pickup.begin(), pickup.end(), dest) != pickup.end());
+            std::cout << "dest " << dest << std::endl;
+
+            // now insert pickup after dest.
+            list_t::iterator place = std::find(current, data.end(), dest);
+            if (place == data.end())
+                place = std::find(data.begin(), current, dest);
+            // splice inserts before the iterator
+            place++;
+            data.splice(place, pickup);
+
+            current++;
+            if (current == data.end())
+                current = data.begin();
+        }
+
+        std::string answer;
+        list_t::iterator final = std::find(data.begin(), data.end(), 1);
+
+        final++;
+        long product = *final;
+        final++;
+        product *= *final;
+
+        return product;
+
+    }
+
 }
