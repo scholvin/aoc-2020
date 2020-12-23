@@ -18,8 +18,8 @@ namespace day20
 
         Herman Melville, _Moby-Dick; or, The Whale_
 
-        Day 20. This turned out to be a lot of code, something like 400 lines for part a.
-        But it works and is fast enough. Proably a lot of room to improve in the backtracker.
+        Day 20a turned out to be a lot of code, something like 400 lines, but it works and is fast enough
+        in an optimized build. Proably a lot of room to improve in the backtracker.
 
         There are two implementaion classes:
 
@@ -38,7 +38,9 @@ namespace day20
             - a series of match functions to determine whether a given neighbor, in the given permutation,
               matches the tile on the specified side.
 
-        Both classes support printing debug output to a std::ostream.
+        Both classes support printing debug output at various granularities to a std::ostream.
+
+        Day 20b is still under development. See above about whaling.
     */
 
     class tile
