@@ -144,82 +144,16 @@ namespace week4
         return sum;
     }
 
-    long day23a()
+    typedef std::list<long> list_t;
+    const list_t seed = { 8, 5, 3, 1, 9, 2, 6, 4, 7 };
+
+    // for this exercise, we maintain a vector from value to an iterator ("pointer") to the element in the list
+    // because trying to find the insertion point element by a brute force in part b is untenable
+    typedef std::vector<list_t::iterator> pointers_t;
+
+    void day23(list_t& data, pointers_t& pointers, long moves, long cups)
     {
-        typedef std::list<long> list_t;
-        list_t data = { 8, 5, 3, 1, 9, 2, 6, 4, 7 };
-
-        list_t::iterator current = data.begin();
-        for (auto move = 1; move <= 100; move++)
-        {
-            std::cout << "\nmove " << move << std::endl;
-            std::cout << "cups "; std::for_each(data.begin(), data.end(), [](long l)->void { std::cout << l << " ";}); std::cout << std::endl;
-            std::cout << "curr " << *current << std::endl;
-
-            list_t::iterator cit = current;
-            list_t pickup;
-            cit++;
-            while (pickup.size() < 3)
-            {
-                if (cit == data.end())
-                    cit = data.begin();
-                pickup.push_back(*cit);
-                cit = data.erase(cit);
-            }
-
-            std::cout << "pick "; std::for_each(pickup.begin(), pickup.end(), [](long l)->void { std::cout << l << " ";}); std::cout << std::endl;
-
-            // currrent should point at current cup; data should be the main list with 3 removed, pickup should hold the 3
-            long dest = *current;
-            do
-            {
-                dest--;
-                if (dest == 0)
-                    dest = 9;
-            }
-            while (dest < 1 || dest > 9 || std::find(pickup.begin(), pickup.end(), dest) != pickup.end());
-             std::cout << "dest " << dest << std::endl;
-
-            // now insert pickup after dest.
-            list_t::iterator place = std::find(data.begin(), data.end(), dest);
-            // splice inserts before the iterator
-            place++;
-            data.splice(place, pickup);
-
-            current++;
-            if (current == data.end())
-                current = data.begin();
-        }
-
-        // using the fact that each number is a single digit as a cheat
-        std::string answer;
-        list_t::iterator final = std::find(data.begin(), data.end(), 1);
-
-        auto it = final;
-        it++;
-        while (it != final)
-        {
-            answer += (*it + '0');
-            it++;
-            if (it == data.end())
-                it = data.begin();
-        }
-        std::cout << answer << std::endl;
-        return std::stol(answer);
-    }
-
-    long day23b()
-    {
-        const long CUPS = 1000000;
-        const long MOVES = 10000000;
         const long PICKUPS = 3;
-
-        typedef std::list<long> list_t;
-        list_t seed = { 8, 5, 3, 1, 9, 2, 6, 4, 7 };
-
-        // maintain this data structure so we can find an element in the list based on its value without searching
-        std::vector<list_t::iterator> pointers(CUPS+1); // let's not worry about converting to 0-indexing
-        list_t data;
 
         for (auto s: seed)
         {
@@ -227,21 +161,15 @@ namespace week4
             pointers[s] = std::prev(data.end());
         }
 
-        for (long s = 10; s <= CUPS; s++)
+        for (long s = 10; s <= cups; s++)
         {
             data.push_back(s);
             pointers[s] = std::prev(data.end());
         }
 
         list_t::iterator current = data.begin();
-        for (auto move = 1; move <= MOVES; move++)
+        for (auto move = 1; move <= moves; move++)
         {
-#if 0
-            std::cout << "\nmove " << move << std::endl;
-            //std::cout << "cups "; std::for_each(data.begin(), data.end(), [](long l)->void { std::cout << l << " ";}); std::cout << std::endl;
-            std::cout << "curr " << *current << std::endl;
-#endif
-            if (move % 100000 == 0) std::cout << move << std::endl;
             list_t::iterator cit = current;
             list_t pickup;
             cit++;
@@ -253,27 +181,25 @@ namespace week4
                 cit = data.erase(cit);
                 pointers[pickup.back()] = data.end(); // we will need to fix this up
             }
-//            std::cout << "pick "; std::for_each(pickup.begin(), pickup.end(), [](long l)->void { std::cout << l << " ";}); std::cout << std::endl;
+
             // currrent should point at current cup; data should be the main list with 3 removed, pickup should hold the 3
             long dest = *current;
             do
             {
                 dest--;
                 if (dest == 0)
-                    dest = CUPS;
+                    dest = cups;
             }
-            while (dest < 1 || dest > CUPS || std::find(pickup.begin(), pickup.end(), dest) != pickup.end());
-//            std::cout << "dest " << dest << std::endl;
+            while (dest < 1 || dest > cups || std::find(pickup.begin(), pickup.end(), dest) != pickup.end());
 
             // now insert pickup
             list_t::iterator place = pointers[dest];
-            //list_t::iterator place = std::find(data.begin(), data.end(), dest);
             for (auto p = 0; p < PICKUPS; p++)
             {
                 // insert inserts before the iterator, so move it one to the right
                 place++;
                 place = data.insert(place, pickup.front());
-                pointers[pickup.front()] = place;
+                pointers[pickup.front()] = place; // we are fixing up what we broke above
                 pickup.pop_front();
             }
 
@@ -281,15 +207,49 @@ namespace week4
             if (current == data.end())
                 current = data.begin();
         }
+    }
 
-        // try for the answer, live stupid
+    long day23a()
+    {
+        const long CUPS = 9;
+        const long MOVES = 100;
+
+        list_t data;
+        pointers_t pointers(CUPS+1);
+
+        day23(data, pointers, MOVES, CUPS);
+
+        // using the fact that each number is a single digit as a cheat, build a string and convert
+        std::string answer;
+        list_t::iterator final = pointers[1];
+
+        auto it = final;
+        it++;
+        while (it != final)
+        {
+            answer += (*it + '0');
+            it++;
+            if (it == data.end())
+                it = data.begin();
+        }
+        return std::stol(answer);
+    }
+
+    long day23b()
+    {
+        const long CUPS = 1000000;
+        const long MOVES = 10000000;
+
+        list_t data;
+        pointers_t pointers(CUPS+1);
+
+        day23(data, pointers, MOVES, CUPS);
 
         list_t::iterator final = pointers[1];
         final++;
         long product = *final;
         final++;
         product *= *final;
-
         return product;
     }
 
