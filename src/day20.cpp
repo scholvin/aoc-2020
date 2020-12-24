@@ -4,7 +4,6 @@
 #include <iostream>
 #include <unordered_set>
 #include <cassert>
-#include <cstring>
 
 namespace day20
 {
@@ -477,21 +476,62 @@ done:
 #endif
     }
 
+    const std::string SEA_FILE = "../data/day20sea.dat";
+
     long day20a()
     {
         image::tileset_t tiles;
         load_tiles(tiles);
 
         image solution(tiles);
+
+        // write the sea map out to a file, to save step 20b from calculating this idiocy every time
+        // this takes about 1ms to write
+        image::sea_t sea;
+        solution.make_sea(sea);
+        std::ofstream outfile(SEA_FILE);
+
+        for (std::size_t y = 0; y < image::SEA_GRID; y++)
+        {
+            for (std::size_t x = 0; x < image::SEA_GRID; x++)
+            {
+                outfile << sea[x][y];
+            }
+            outfile << std::endl;
+        }
+        outfile.close();
+
         return solution.result();
     }
 
     long day20b()
     {
-        image::tileset_t tiles;
-        load_tiles(tiles);
+        image::sea_t sea;
 
-        image intermediate(tiles);
+        // is the file there? use it, else solve
+        std::ifstream infile(SEA_FILE);
+        if (infile.good())
+        {
+            std::string line;
+            size_t y = 0;
+            while (std::getline(infile, line))
+            {
+                assert(line.size() == image::SEA_GRID); // in case we have conflicting versions
+                for (size_t x = 0; x < line.size(); x++)
+                {
+                    sea[x][y] = line[x];
+                }
+                y++;
+            }
+        }
+        else
+        {
+            // solve it to make the sea
+            image::tileset_t tiles;
+            load_tiles(tiles);
+            image solution(tiles);
+            solution.make_sea(sea);
+        }
 
         const std::vector<std::string> SEA_MONSTER =
         {
@@ -519,10 +559,6 @@ done:
                 horz[3][MON_X-x-1][MON_Y-1] = SEA_MONSTER[y][x]; // flipped both (aka rotated 180)
             }
         }
-
-        image::sea_t sea;
-        memset(&sea, '*', sizeof(sea));
-        intermediate.make_sea(sea);
 
         for (size_t y = 0; y < image::SEA_GRID; y++)
         {
