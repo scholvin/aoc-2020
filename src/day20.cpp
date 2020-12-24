@@ -255,6 +255,22 @@ namespace day20
             }
         }
 
+        void write_sea(const sea_t& sea, const std::string& filename) const
+        {
+            std::ofstream outfile(filename);
+
+            for (std::size_t y = 0; y < SEA_GRID; y++)
+            {
+                for (std::size_t x = 0; x < SEA_GRID; x++)
+                {
+                    outfile << sea[x][y];
+                }
+                outfile << std::endl;
+            }
+            outfile.close();
+        }
+
+
     private:
 
         void solve()
@@ -489,17 +505,7 @@ done:
         // this takes about 1ms to write
         image::sea_t sea;
         solution.make_sea(sea);
-        std::ofstream outfile(SEA_FILE);
-
-        for (std::size_t y = 0; y < image::SEA_GRID; y++)
-        {
-            for (std::size_t x = 0; x < image::SEA_GRID; x++)
-            {
-                outfile << sea[x][y];
-            }
-            outfile << std::endl;
-        }
-        outfile.close();
+        solution.write_sea(sea, SEA_FILE); // save this for later, takes about 1ms
 
         return solution.result();
     }
@@ -531,6 +537,7 @@ done:
             load_tiles(tiles);
             image solution(tiles);
             solution.make_sea(sea);
+            solution.write_sea(sea, SEA_FILE); // save this for later, too
         }
 
         const std::vector<std::string> SEA_MONSTER =
