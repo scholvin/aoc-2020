@@ -512,6 +512,7 @@ done:
 
     long day20b()
     {
+        // start by getting the map of the sea
         image::sea_t sea;
 
         // is the file there? use it, else solve
@@ -540,6 +541,44 @@ done:
             solution.write_sea(sea, SEA_FILE); // save this for later, too
         }
 
+        // we need to permute the sea map like we did the individual tiles in the original solution.
+        // there are 8 variants: the original, plus 3 rotations, then take each of those 4 versions
+        // and flip each one horizontally.
+
+        std::vector<image::sea_t> seas;
+        seas.push_back(sea);
+
+        // rotate them
+        for (size_t r = 1; r <= 3; r++)
+        {
+            image::sea_t next;
+            for (size_t i = 0; i < image::SEA_GRID/2; i++)
+            {
+                for (size_t j = i; j < image::SEA_GRID-i-1; j++)
+                {
+                    next[i][j]                                     = seas[r-1][image::SEA_GRID-1-j][i];
+                    next[image::SEA_GRID-1-j][i]                   = seas[r-1][image::SEA_GRID-1-i][image::SEA_GRID-1-j];
+                    next[image::SEA_GRID-1-i][image::SEA_GRID-1-j] = seas[r-1][j][image::SEA_GRID-1-i];
+                    next[j][image::SEA_GRID-1-i]                   = seas[r-1][i][j];
+                }
+            }
+            seas.push_back(next);
+        }
+
+        // flip them
+        for (size_t r = 4; r < 8; r++)
+        {
+            image::sea_t next;
+            for (size_t i = 0; i < image::SEA_GRID; i++)
+            {
+                for (size_t j = 0; j < image::SEA_GRID; j++)
+                {
+                    next[i][j] = seas[r-4][image::SEA_GRID-i-1][j];
+                }
+            }
+            seas.push_back(next);
+        }
+
         const std::vector<std::string> SEA_MONSTER =
         {
             "                  # ",
@@ -550,20 +589,15 @@ done:
         // cheat alert
         const size_t MON_X = 20;
         const size_t MON_Y = 3;
-        typedef std::array<std::array<char, MON_Y>, MON_X> monster_horz_t;
-        //typedef std::array<std::array<char, MON_X>, MON_Y> monster_vert_t;
+        typedef std::array<std::array<char, MON_Y>, MON_X> monster_t;
 
-        // instead of flipping and rotating the sea, we flip and rotate the monster
-        std::array<monster_horz_t, 4> horz;
-
+        // convert from string above to an array for more efficient processing
+        monster_t monster;
         for (size_t x = 0; x < MON_X; x++)
         {
             for (size_t y = 0; y < MON_Y; y++)
             {
-                horz[0][x][y] = SEA_MONSTER[y][x];               // base monster
-                horz[1][MON_X-x-1][y] = SEA_MONSTER[y][x];       // flipped horizontally
-                horz[2][x][MON_Y-y-1] = SEA_MONSTER[y][x];       // flipped vertically
-                horz[3][MON_X-x-1][MON_Y-1] = SEA_MONSTER[y][x]; // flipped both (aka rotated 180)
+                monster[x][y] = SEA_MONSTER[y][x]; // looks weird, is right
             }
         }
 
@@ -571,13 +605,13 @@ done:
         {
             for (size_t x = 0; x < image::SEA_GRID; x++)
             {
-                std::cout << sea[x][y];
+                std::cout << seas[0][x][y];
             }
             std::cout << std::endl;
         }
 
         // find matches
-        for (size_t r = 0; r < 4; r++)
+        for (size_t s = 0; s < seas.size(); s++)
         {
            for (size_t x = 0; x < image::SEA_GRID - MON_X; x++)
             {
@@ -588,7 +622,7 @@ done:
                     {
                         for (size_t j = y; j < y + MON_Y; j++)
                         {
-                            if (horz[r][i-x][j-y] == '#' && sea[i][j] != '#')
+                            if (monster[i-x][j-y] == '#' && seas[s][i][j] != '#')
                             {
                                 match = false;
                                 goto no_bueno;
@@ -597,7 +631,7 @@ done:
                     }
 no_bueno:
                     if (match)
-                        std::cout << "match at r,x,y " << r << "," << x << "," << y << std::endl;
+                        std::cout << "match at s,x,y " << s << "," << x << "," << y << std::endl;
                 }
             }
         }
