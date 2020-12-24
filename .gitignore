@@ -4,3 +4,4 @@ bfast
 ._.DS_Store
 data/*-big.dat
 data/*-smol.dat
+data/day20sea.dat
