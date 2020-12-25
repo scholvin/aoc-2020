@@ -406,4 +406,39 @@ namespace week4
         }
         return std::count_if(floor.begin(), floor.end(), [](const floor_t::value_type& t) { return t.second == black; });
     }
+
+    const long MULTIPLIER = 7;
+    const long DIVISOR = 20201227;
+    size_t find_loop(long key)
+    {
+        long subject = 1;
+        size_t loop = 0;
+        while (subject != key)
+        {
+            subject *= MULTIPLIER;
+            subject = subject % DIVISOR;
+            loop++;
+        }
+        return loop;
+    }
+
+    long run_loop(size_t loop, long key)
+    {
+        long subject = 1;
+        for (size_t i = 0; i < loop; i++)
+        {
+            subject *= key;
+            subject = subject % DIVISOR;
+        }
+        return subject;
+    }
+
+    long day25a()
+    {
+        const long PUBKEY1 = 13316116;
+        const long PUBKEY2 = 13651422;
+
+        size_t loop1 = find_loop(PUBKEY1);
+        return run_loop(loop1, PUBKEY2);
+    }
 }
