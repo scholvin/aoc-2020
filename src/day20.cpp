@@ -4,6 +4,7 @@
 #include <iostream>
 #include <unordered_set>
 #include <cassert>
+#include <cstring>
 
 namespace day20
 {
@@ -15,7 +16,7 @@ namespace day20
             would not at heart feel one whit more of terror, than though seated before your evening fire
             with a poker, and not a harpoon, by your side.
 
-        Herman Melville, _Moby-Dick; or, The Whale_
+        -- Herman Melville, _Moby-Dick; or, The Whale_
 
         Day 20a turned out to be a lot of code, something like 400 lines, but it works and is fast enough
         in an optimized build. Proably a lot of room to improve in the backtracker.
@@ -39,8 +40,30 @@ namespace day20
 
         Both classes support printing debug output at various granularities to a std::ostream.
 
-        Day 20b is still under development. See above about whaling.
-    */
+        -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+            Towards thee I roll, thou all-destroying but unconquering whale; to the last I grapple with thee;
+            from hell’s heart I stab at thee; for hate’s sake I spit my last breath at thee. Sink all coffins
+            and all hearses to one common pool! and since neither can be mine, let me then tow to pieces, while
+            still chasing thee, though tied to thee, thou damned whale! Thus, I give up the spear!
+
+        -- Ibid.
+
+        Day 20b was more of an exercise in accounting than complicated backtracking or other suchlike. Simply,
+        given the solution to 20a, create a map of the sea, and figure out where the sprite of the "sea monster"
+        matches the map. The hint here is that the sea has to be rotated and flipped in all the same permutations
+        as the individual tiles were. (See comments in early part of tile class below.)
+
+        This is just a lot of ugly, detail-oriented code, hewn to follow the arbitrary and somewhat inscrutable
+        instructions. But that's how life is. This is more like a real-world programming assignment than the first
+        part.
+
+        Surely it could be written to run faster or more elegantly, and with fewer baked-in assumptions about
+        the test data, but ultimately, the idea is to get the star.
+
+        Implementation note: tired of waiting for the backtracker to run each time, I chose to write the solution
+        out to a file in part a, and read it in in part b (if it's there).
+     */
 
     class tile
     {
@@ -601,16 +624,12 @@ done:
             }
         }
 
-        for (size_t y = 0; y < image::SEA_GRID; y++)
-        {
-            for (size_t x = 0; x < image::SEA_GRID; x++)
-            {
-                std::cout << seas[0][x][y];
-            }
-            std::cout << std::endl;
-        }
+        // we will use this sea map to track the matches
+        image::sea_t match_sea;
+        memset(&match_sea, ' ', sizeof(match_sea));
+        size_t match_id = 99999;
 
-        // find matches
+        // find matches - in theory, they only happen on 1 of the 8 permutations we just calculated
         for (size_t s = 0; s < seas.size(); s++)
         {
            for (size_t x = 0; x < image::SEA_GRID - MON_X; x++)
@@ -631,12 +650,41 @@ done:
                     }
 no_bueno:
                     if (match)
-                        std::cout << "match at s,x,y " << s << "," << x << "," << y << std::endl;
+                    {
+                        match_id = s;
+                        for (size_t i = x; i < x + MON_X; i++)
+                        {
+                            for (size_t j = y; j < y + MON_Y; j++)
+                            {
+                                if (monster[i-x][j-y] == '#')
+                                    match_sea[i][j] = '!';
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        return -1;
+        // at this point, match_sea should contain a ! wherever there was a match
+        // count the # in seas[match_id], count the ! in match, and subtract
+        long sea_hash = 0;
+        long monster_bang = 0;
+        for (size_t x = 0; x < image::SEA_GRID; x++)
+        {
+            for (size_t y = 0; y < image::SEA_GRID; y++)
+            {
+                if (seas[match_id][x][y] == '#')
+                {
+                    sea_hash++;
+                }
+                if (match_sea[x][y] == '!')
+                {
+                    monster_bang++;
+                }
+            }
+        }
+
+        return sea_hash - monster_bang;
     }
 
 
