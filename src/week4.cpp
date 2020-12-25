@@ -287,7 +287,7 @@ namespace week4
 
     typedef std::unordered_map<coordinates, tile, coordinates_hasher> floor_t;
 
-    // for debugging...shout to Empire
+    // for debugging...another shout-out to empire
     void print(const floor_t& floor)
     {
         std::cout << "  098765432101234567890" << std::endl;
@@ -407,10 +407,11 @@ namespace week4
         return std::count_if(floor.begin(), floor.end(), [](const floor_t::value_type& t) { return t.second == black; });
     }
 
-    const long MULTIPLIER = 7;
     const long DIVISOR = 20201227;
+
     size_t find_loop(long key)
     {
+        const long MULTIPLIER = 7;
         long subject = 1;
         size_t loop = 0;
         while (subject != key)
