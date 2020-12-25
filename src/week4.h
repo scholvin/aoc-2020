@@ -9,6 +9,7 @@ namespace week4
     long day23a();
     long day23b();
     long day24a();
+    long day24b();
 
     const runner::method_map_t method_map =
     {
@@ -17,5 +18,6 @@ namespace week4
         { "23a", &day23a },
         { "23b", &day23b },
         { "24a", &day24a },
+        { "24b", &day24b },
     };
 };

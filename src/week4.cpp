@@ -5,6 +5,7 @@
 #include <deque>
 #include <list>
 #include <map>
+#include <iomanip>
 
 #include <boost/container_hash/hash.hpp>
 
@@ -256,41 +257,66 @@ namespace week4
         return product;
     }
 
-    long day24a()
-    {
-        std::ifstream infile("../data/day24.dat");
-        std::string line;
+    /*
+        use empire coordinates:
 
-        /*
-            use empire coordinates:
-
-                 -1,-1   -1,1
+                 -1,-1   1,-1
              -2,0     0,0    2,0
                  -1,1     1,1
 
-            keep a hash of the coordinates to the tile color
-        */
+        keep a hash of the coordinates to the tile color
+    */
 
-        struct coordinates
+    struct coordinates
+    {
+        long x, y;
+        bool operator==(const coordinates& that) const { return x == that.x && y == that.y; }
+    };
+
+    struct coordinates_hasher {
+        size_t operator()(const coordinates& c) const
         {
-            long x, y;
-            bool operator==(const coordinates& that) const { return x == that.x && y == that.y; }
-        };
+            size_t seed = 110571;
+            boost::hash_combine(seed, c.x);
+            boost::hash_combine(seed, c.y);
+            return seed;
+        }
+    };
 
-        struct coordinates_hasher {
-            size_t operator()(const coordinates& c) const
+    enum tile { white, black };
+
+    typedef std::unordered_map<coordinates, tile, coordinates_hasher> floor_t;
+
+    // for debugging...shout to Empire
+    void print(const floor_t& floor)
+    {
+        std::cout << "  098765432101234567890" << std::endl;
+        for (long y = -6; y <= 6; y++)
+        {
+            std::cout << std::setw(2) << y;
+            if (y & 1) std::cout << " ";
+            for (long x = ((y & 1) == 1 ? -9 : -10); x <= ((y & 1) == 1 ? 9 : 10); x += 2)
             {
-                size_t seed = 110571;
-                boost::hash_combine(seed, c.x);
-                boost::hash_combine(seed, c.y);
-                return seed;
+                auto it = floor.find({x, y});
+                if (it == floor.end())
+                    std::cout << ". ";
+                else if (x == 0 && y == 0 && it->second == white)
+                    std::cout << "W " ;
+                else if (it->second == white)
+                    std::cout << "w ";
+                else if (x == 0 && y == 0)
+                    std::cout << "B ";
+                else
+                    std::cout << "b ";
             }
-        };
+            std::cout << std::endl;
+        }
+    }
 
-        enum tile { white, black };
-
-        typedef std::unordered_map<coordinates, tile, coordinates_hasher> floor_t;
-        floor_t floor;
+    void init_tiles(floor_t& floor)
+    {
+        std::ifstream infile("../data/day24.dat");
+        std::string line;
 
         floor[{0, 0}] = white;
 
@@ -318,7 +344,66 @@ namespace week4
                 t->second = black;
             else t->second = white;
         }
+    }
 
+    long day24a()
+    {
+        floor_t floor;
+        init_tiles(floor);
+
+        return std::count_if(floor.begin(), floor.end(), [](const floor_t::value_type& t) { return t.second == black; });
+    }
+
+    long day24b()
+    {
+        floor_t floor;
+        init_tiles(floor);
+
+        for (auto day = 1; day <= 100; day++)
+        {
+            floor_t adds;
+            for (auto t: floor)
+            {
+                // pre-process the floor to explicitly turn any "missing" tile adjacent to a black tile to white
+                // use a temp data structure so we don't have to worry about the iterator invalidating
+                if (t.second == black)
+                {
+                    if (floor.find({t.first.x-1, t.first.y-1}) == floor.end()) adds[{t.first.x-1, t.first.y-1}] = white; // nw
+                    if (floor.find({t.first.x+1, t.first.y-1}) == floor.end()) adds[{t.first.x+1, t.first.y-1}] = white; // ne
+                    if (floor.find({t.first.x+2, t.first.y})  ==  floor.end()) adds[{t.first.x+2, t.first.y}] = white;   // e
+                    if (floor.find({t.first.x+1, t.first.y+1}) == floor.end()) adds[{t.first.x+1, t.first.y+1}] = white; // se
+                    if (floor.find({t.first.x-1, t.first.y+1}) == floor.end()) adds[{t.first.x-1, t.first.y+1}] = white; // sw
+                    if (floor.find({t.first.x-2, t.first.y})  ==  floor.end()) adds[{t.first.x-2, t.first.y}] = white;   // w
+                }
+            }
+            // now add from the temporary list to the real one
+            for (auto a: adds)
+            {
+                floor[a.first] = a.second;
+            }
+
+            // now apply the logic
+            floor_t next;
+            for (auto t: floor)
+            {
+                long black_adj = 0;
+                floor_t::const_iterator it;
+                it = floor.find({t.first.x-1, t.first.y-1}); if (it != floor.end() && it->second == black) black_adj++; // nw
+                it = floor.find({t.first.x+1, t.first.y-1}); if (it != floor.end() && it->second == black) black_adj++; // ne
+                it = floor.find({t.first.x+2, t.first.y});   if (it != floor.end() && it->second == black) black_adj++; // e
+                it = floor.find({t.first.x+1, t.first.y+1}); if (it != floor.end() && it->second == black) black_adj++; // se
+                it = floor.find({t.first.x-1, t.first.y+1}); if (it != floor.end() && it->second == black) black_adj++; // sw
+                it = floor.find({t.first.x-2, t.first.y});   if (it != floor.end() && it->second == black) black_adj++; // w
+
+                if (t.second == black && (black_adj == 0 || black_adj > 2))
+                    next[t.first] = white;
+                else if (t.second == white && black_adj == 2)
+                    next[t.first] = black;
+                else
+                    next[t.first] = t.second;
+            }
+            floor = next;
+        }
         return std::count_if(floor.begin(), floor.end(), [](const floor_t::value_type& t) { return t.second == black; });
     }
 }
