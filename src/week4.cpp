@@ -4,6 +4,9 @@
 #include <iostream>
 #include <deque>
 #include <list>
+#include <map>
+
+#include <boost/container_hash/hash.hpp>
 
 namespace week4
 {
@@ -253,4 +256,69 @@ namespace week4
         return product;
     }
 
+    long day24a()
+    {
+        std::ifstream infile("../data/day24.dat");
+        std::string line;
+
+        /*
+            use empire coordinates:
+
+                 -1,-1   -1,1
+             -2,0     0,0    2,0
+                 -1,1     1,1
+
+            keep a hash of the coordinates to the tile color
+        */
+
+        struct coordinates
+        {
+            long x, y;
+            bool operator==(const coordinates& that) const { return x == that.x && y == that.y; }
+        };
+
+        struct coordinates_hasher {
+            size_t operator()(const coordinates& c) const
+            {
+                size_t seed = 110571;
+                boost::hash_combine(seed, c.x);
+                boost::hash_combine(seed, c.y);
+                return seed;
+            }
+        };
+
+        enum tile { white, black };
+
+        typedef std::unordered_map<coordinates, tile, coordinates_hasher> floor_t;
+        floor_t floor;
+
+        floor[{0, 0}] = white;
+
+        while (std::getline(infile, line))
+        {
+            long x = 0, y = 0;
+            for (size_t i = 0; i < line.size(); )
+            {
+                char c = line[i++];
+                if (c == 'e') x += 2;
+                else if (c == 'w') x -= 2;
+                else if (c == 'n' || c == 's')
+                {
+                    char d = line[i++];
+                    if (c == 'n' && d == 'e')      { x++; y--; }
+                    else if (c == 'n' && d == 'w') { x--; y--; }
+                    else if (c == 's' && d == 'e') { x++; y++; }
+                    else if (c == 's' && d == 'w') { x--; y++; }
+                }
+            }
+            auto t = floor.find({x, y});
+            if (t == floor.end())
+                floor[{x, y}] = black;
+            else if (t->second == white)
+                t->second = black;
+            else t->second = white;
+        }
+
+        return std::count_if(floor.begin(), floor.end(), [](const floor_t::value_type& t) { return t.second == black; });
+    }
 }
